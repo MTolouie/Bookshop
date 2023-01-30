@@ -1,6 +1,3 @@
-*.cs linguist-detectable=true
-*.cshtml linguist-detectable=true
-*.html linguist-detectable=false
 
 
 
@@ -67,4 +64,3 @@
 #*.PDF   diff=astextplain
 #*.rtf   diff=astextplain
 #*.RTF   diff=astextplain
-
