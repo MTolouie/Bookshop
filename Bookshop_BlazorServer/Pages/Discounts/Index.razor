@@ -1,0 +1,238 @@
+﻿@page "/Discounts/Index/{pageid:int}"
+@inject IDiscountRepository _discountRepository
+@inject IBookRepository _bookRepository
+@inject IJSRuntime _jsRuntime
+@inject NavigationManager _navigationManager
+@inject IHashids _hashId
+@inject IHttpContextAccessor _httpContextAccessor
+@attribute [Authorize(Roles = SD.Role_Admin)]
+<PageTitle>Discounts</PageTitle>
+
+
+<div class="col-mg-12" style="margin-left:15px;margin-right:15px;margin-top:100px;">
+    <a class="btn btn-outline-primary btn-block" href="/Discounts/Create">Create</a>
+    <div class="card" style="margin-top:10px;">
+        <div class="card-body">
+            <h2 class="box-title text-center">Discounts</h2>
+
+            <div class="form-inline mt-4 ml-2">
+                <label>Book Titles : </label>
+                <div class="form-group ml-2" style="width:300px;">
+
+                    <BlazoredTypeahead SearchMethod="GetBooks"
+                                       @bind-Value="SelectedBook"
+                                       placeholder="Search by Book Title..."
+                                       Context="bookContext"
+                                       ShowDropDownOnFocus=true>
+                        <SelectedTemplate>
+                            @bookContext.Title
+                        </SelectedTemplate>
+                        <ResultTemplate Context="book">
+                            @book.Title
+                        </ResultTemplate>
+                    </BlazoredTypeahead>
+                </div>
+                @*<div class="form-group col-md-3">
+                Start Date : &ensp; <InputDate  @bind-Value="Filter.FromDate"   class="form-control"></InputDate>
+                </div>
+
+                <div class="form-group col-md-3">
+                End Date : &ensp; <InputDate @bind-Value="Filter.ToDate" class="form-control"></InputDate>
+                </div>*@
+                <a @onclick="NavigateToIndex" class="btn btn-outline-dark btn-block ml-5" style="max-width:90px;">
+                    <i class="fa fa-eraser"></i>
+                </a>
+                <button @onclick="FilterTable" class="btn btn-outline-success btn-block mb-2 ml-3 " style="max-width:90px;"><i class="fa fa-search"></i></button>
+            </div>
+
+        </div>
+        <div class="card-body">
+            <div class="table-stats order-table ov-h">
+                @{
+                    int j = 1;
+                }
+
+
+                @if (DiscountsDTOs.Any())
+                {
+                    <table class="table ">
+                        <thead>
+                            <tr>
+                                <th class="serial">#</th>
+                                <th class="avatar">Book Title</th>
+                                <th>Percentage</th>
+                                <th>Start Date</th>
+                                <th>End Date</th>
+                                <th>Is Expired</th>
+                                <th>Activity</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in DiscountsDTOs)
+                            {
+                                <tr>
+
+                                    <td class="serial">@(j++)</td>
+                                    @{
+                                        var bookTitle =  GetBookTitle(item.BookId);
+                                    }
+                                    <td class="avatar">
+                                        @bookTitle
+                                    </td>
+                                    <td>
+                                        <span class="name">@item.DiscountPercent%</span>
+                                    </td>
+                                    <td>
+                                        <span class="name">@item.StartDate.ToGregorian()</span>
+                                    </td>
+                                    <td>
+                                        <span class="name">@item.endDate.ToGregorian()</span>
+                                    </td>
+                                     <td>
+                                        
+                                            @if(item.IsExpired)
+                                            {
+                                             <span class="badge badge-danger">Expired</span>   
+                                            }
+                                            else
+                                            {
+                                             <span class="badge badge-success">Active</span>   
+                                            }
+                                        
+                                    </td>
+                                    <td class="col-md-3">
+                                        <button class="btn btn-outline-danger" @onclick="()=>ShowDeleteModal(item.DiscountId)">Delete</button>
+                                        <a class="btn btn-outline-warning" href="/discounts/Edit/@_hashId.Encode(item.DiscountId)">Edit</a>
+                                    </td>
+                                </tr>
+                            }
+
+                        </tbody>
+                    </table>
+                }
+
+
+
+                else
+                {
+
+                    <div class="alert alert-danger text-center">
+                        <h2>No Data</h2>
+                    </div>
+
+
+                }
+
+            </div>
+        </div> <!-- /.table-stats -->
+
+    </div> <!-- /.card -->
+    @if (PageCount > 0)
+    {
+        <ul class="pagination">
+            @for (int i = 1; i <= PageCount; i++)
+            {
+                <li class="page-item @(pageid == i ?"active" : "")"><a class="page-link mb-5" href="/sliders/Index/@i">@i</a></li>
+            }
+        </ul>
+    }
+</div>  <!-- /.col-lg-8 -->
+<!-- /.orders -->
+@code {
+
+    public List<DiscountDTO> DiscountsDTOs { get; set; } = new();
+
+    [Parameter]
+    public int pageid { get; set; } = 1;
+
+    public int PageCount { get; set; }
+
+    public List<BookDTO> BookDTOs { get; set; } = new();
+    public BookDTO SelectedBook { get; set; } = new();
+
+    [CascadingParameter]
+    public IModalService Modal { get; set; }
+
+
+    private async Task LoadData(/*DateTime startDate, DateTime endDate,*/ int pageId = 1, int bookId = 0)
+    {
+
+        (DiscountsDTOs, PageCount) = await _discountRepository.GetAllDiscounts(pageId,bookId);
+
+    }
+
+    private string GetBookTitle(int bookId)
+    {
+        var title = _bookRepository.GetBookTitle(bookId);
+        return title;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    //protected override async Task OnAfterRenderAsync(bool firstRender)
+    //{
+    //    if (firstRender)
+    //    {
+    //        await LoadData(DateTime.MinValue, DateTime.MinValue);
+    //    }
+    //}
+
+    async Task FilterTable()
+    {
+        await LoadData(pageid, SelectedBook.BookId);
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        SelectedBook = null ;
+        await LoadData(pageid);
+    }
+
+    private async Task<IEnumerable<BookDTO>> GetBooks(string searchText)
+    {
+        (BookDTOs, _) = _bookRepository.GetAllBooks(DateTime.MinValue, DateTime.MinValue, 1, searchText);
+        return BookDTOs;
+    }
+
+    async Task NavigateToIndex()
+    {
+        //Filter = new SliderFilterViewModel()
+        //    {
+        //        SliderTitle = ""
+        //    };
+        SelectedBook = new();
+        _navigationManager.NavigateTo($"/Discounts/Index/1");
+        await LoadData();
+    }
+
+
+    private async Task ShowDeleteModal(int discountId)
+    {
+        var options = new ModalOptions()
+            {
+                Position = ModalPosition.Center,
+                HideCloseButton = false,
+                Animation = ModalAnimation.FadeInOut(0.3),
+                ContentScrollable = true
+            };
+
+        ModalParameters parameters = new ModalParameters();
+        parameters.Add("discountId", discountId);
+
+
+        var DeleteModal = Modal.Show<_DiscountDelete>("Delete Discount ?", parameters, options);
+        var result = await DeleteModal.Result;
+
+        if (!result.Cancelled)
+        {
+             await LoadData(pageid);
+
+        }
+    }
+
+
+}
+

@@ -1,0 +1,122 @@
+﻿@inject IBookRepository _bookRepository
+@inject IDiscountRepository _discountRepository
+@inject IWishlistRepository _wishlistRepository
+@inject NavigationManager _navigationManager
+@inject ILocalStorageService _localStorage
+@inject IJSRuntime _jsRuntime
+@inject IHashids _hashId
+
+
+    <div class="col-lg-3 col-md-4 col-sm-6 mix oranges fresh-meat" style="">
+
+    <div class="featured__item">
+    <div class="featured__item__pic set-bg" data-setbg="@book.Image" style="background-image: url(@book.Image);">
+        <ul class="featured__item__pic__hover">
+            <li><a @onclick="()=>AddToWishlist()"><i class="fa fa-heart"></i></a></li>
+        </ul>
+    </div>
+    <div class="featured__item__text">
+        <h6><a href="/Books/BookDetails/@_hashId.Encode(book.BookId)">@book.Title</a></h6>
+         @if(discount is not null)
+        {
+               <h5>
+             @{
+                    var discountPrice = DiscountCalculator.CalculateDiscount(book.Price, discount.DiscountPercent);
+                }
+            
+           @discountPrice.ToString("C")</h5>
+
+           <h5><s>@book.Price.ToString("C")</s></h5>
+        }
+        else
+        {
+             <h5>
+            @book.Price.ToString("C")
+        </h5>
+        }
+    </div>
+    </div>
+</div>
+@code {
+    [Parameter]
+    public BookDTO book { get; set; } = new();
+
+    public DiscountDTO? discount { get; set; } = new();
+
+    public List<string>? BookCategories { get; set; } = new();
+
+    [CascadingParameter]
+    public Task<AuthenticationState> AuthenticationState { get; set; }
+
+
+    protected override async Task OnParametersSetAsync()
+    {
+        BookCategories = await _bookRepository.GetbookCategoryTitle(SD.BooksApiPath,"GetbookCategoryTitle",book.BookId);
+        discount = await _discountRepository.GetBookDiscount(SD.DiscountApiPath,"GetBookDiscount",book.BookId);
+        StateHasChanged();
+
+
+    }
+
+    private async Task NavigateToDetails(string id)
+    {
+        //_navigationManager.NavigateTo($"/Books/BookDetails/{id}");
+        await _jsRuntime.InvokeAsync<object>("open", $"/Books/BookDetails/{id}", "_blank");
+    }
+
+
+        private async Task<Tuple<string, UserDTO>> GetDataFromLocalStorage()
+    {
+        var user = new UserDTO();
+        string? Token = "";
+        if (await _localStorage.GetItemAsync<string>(SD.Local_Token) is not null)
+        {
+            user = await _localStorage.GetItemAsync<UserDTO>(SD.Local_UserDetails);
+            Token = await _localStorage.GetItemAsync<string>(SD.Local_Token);
+        }
+        else
+        {
+            var authenticationState = await AuthenticationState;
+            if (!authenticationState.User.Identity.IsAuthenticated)
+            {
+                await _jsRuntime.ToastrError("You Need To Login");
+                _navigationManager.NavigateTo("/Account/Login");
+                return null;
+
+            }
+        }
+        var tuple = Tuple.Create(Token, user);
+        return tuple;
+    }
+
+    private async Task AddToWishlist()
+    {
+
+        var (Token, user) = await GetDataFromLocalStorage();
+
+        var wishlist = new WishlistDTO()
+            {
+                BookId = book.BookId,
+                BookTitle = book.Title,
+                IsDiscounted = (discount?.IsExpired == false ? true : false),
+                DiscountedPrice = (discount?.IsExpired == false ? DiscountCalculator.CalculateDiscount(book.Price, discount.DiscountPercent) : 0),
+                Image = book.Image,
+                Price = book.Price,
+                UserId = user.Id,
+                CreateDate = DateTime.Now
+            };
+
+        var IsCreated = await _wishlistRepository.CreateAsync(SD.WishlistApiPath, wishlist, Token);
+
+        if (IsCreated)
+        {
+            await _jsRuntime.ToastrSuccess("Added To Your Wishlist");
+        }
+        else
+        {
+            await _jsRuntime.ToastrError("Something Went Wrong");
+        }
+    }
+
+
+}

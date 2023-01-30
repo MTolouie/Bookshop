@@ -1,0 +1,226 @@
+﻿@page "/Dashboard/AddAddress"
+@using Ganss.XSS
+@inject IAddressRepository _addressRepository
+@inject NavigationManager _navigationManager
+@inject ILocalStorageService _localStorage
+@inject IJSRuntime _jsRuntime
+@attribute [Authorize(Roles = SD.Role_Customer)]
+<HeadContent>
+    <link rel="stylesheet" href="css/Dashboard.css" type="text/css">
+</HeadContent>
+
+
+
+<div class="container">
+    <div class="main-body">
+
+        <!-- Breadcrumb -->
+        <nav aria-label="breadcrumb" class="main-breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/">Home</a></li>
+                <li class="breadcrumb-item active" aria-current="page">User Profile</li>
+            </ol>
+        </nav>
+        <!-- /Breadcrumb -->
+
+        <div class="row gutters-sm">
+            <div class="col-md-4 mb-3">
+                <DashboardSideNav UserName="@User.FullName"></DashboardSideNav>
+                <DashboardInfoNav></DashboardInfoNav>
+            </div>
+            <div class="col-md-8">
+
+                <section>
+                    <EditForm Model="addressDTO" OnValidSubmit="CreateAddress" OnInvalidSubmit="InvalidSubmit">
+                        <input type="hidden" @bind-value="addressDTO.UserId" />
+                        <div class="col-md-12">
+                            <div class="card">
+                                <div class="card-header">Add Address</div>
+
+                                <div class="card-body card-block">
+
+                                    <div class="form-group">
+                                        <DataAnnotationsValidator></DataAnnotationsValidator>
+                                        <div style="color:red;">
+                                            <ValidationSummary></ValidationSummary>
+                                        </div>
+                                        <div class="input-group">
+                                            <div class="input-group-prepend">
+                                                <span class="input-group-text">Address Title</span>
+                                            </div>
+                                            <InputText @bind-Value="addressDTO.AddressTitle" class="form-control" type="text" placeholder="Title">
+                                            </InputText>
+                                            <div class="input-group-prepend"> <span class="input-group-text"><i class="fa fa-address-book"></i></span></div>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <div class="input-group">
+                                            <div class="input-group-prepend">
+                                                <span class="input-group-text">PROVINCE</span>
+                                            </div>
+                                            <InputText @bind-Value="addressDTO.PROVINCE" class="form-control" type="text" id="Province" placeholder="Province">
+                                            </InputText>
+                                            <div class="input-group-prepend"> <span class="input-group-text"><i class="fa fa-address-card"></i></span></div>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <div class="input-group">
+                                            <div class="input-group-prepend">
+                                                <span class="input-group-text">Town</span>
+                                            </div>
+                                            <InputText @bind-Value="addressDTO.Town" class="form-control" type="text" placeholder="Town">
+                                            </InputText>
+                                            <div class="input-group-prepend"> <span class="input-group-text"><i class="fa fa-address-card"></i></span></div>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <div class="input-group">
+                                            <div class="input-group-prepend">
+                                                <span class="input-group-text">PhoneNo</span>
+                                            </div>
+                                            <InputText @bind-Value="addressDTO.PhoneNo" class="form-control" type="text"  placeholder="PhoneNo">
+                                            </InputText>
+                                            <div class="input-group-prepend"> <span class="input-group-text"><i class="fa fa-phone"></i></span></div>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <div class="input-group">
+                                            <div class="input-group-prepend">
+                                                <span class="input-group-text">Zipcode</span>
+                                            </div>
+                                            <InputText @bind-Value="addressDTO.Zipcode" class="form-control" type="text"  placeholder="Zip/Postal Code">
+                                            </InputText>
+                                            <div class="input-group-prepend"> <span class="input-group-text"><i class="fa fa-code"></i></span></div>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <div class="input-group">
+                                            <div class="input-group-prepend">
+                                                <span class="input-group-text">Address Description</span>
+                                            </div>
+                                            <InputTextArea @bind-Value="addressDTO.AddressDescription" type="text"  class="form-control"  id="address-postal" placeholder="Address Description">
+                                            </InputTextArea>
+                                            <div class="input-group-prepend"> <span class="input-group-text"><i class="fa fa-audio-description"></i></span></div>
+                                        </div>
+                                    </div>
+                                    <div class="form-actions form-group">
+                                        <button class="btn btn-outline-success btn-block" type="submit">Add</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </EditForm>
+
+                </section>
+
+
+
+            </div>
+        </div>
+
+    </div>
+</div>
+
+@code {
+    public UserDTO User { get; set; } = new();
+
+    public AddressDTO addressDTO { get; set; } = new();
+
+    public BlazoredTextEditor QuillHtml { get; set; } = new();
+
+    public string Token { get; set; }
+    //[CascadingParameter]
+    //public Task<AuthenticationState> AuthenticationState{ get; set; }
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        //var authenticationState = await AuthenticationState;
+        User = await _localStorage.GetItemAsync<UserDTO>(SD.Local_UserDetails);
+        addressDTO.UserId = User.Id;
+        Token = await _localStorage.GetItemAsync<string>(SD.Local_Token);
+        if (User is null || Token is null)
+        {
+            _navigationManager.NavigateTo("/Account/Login");
+            return;
+        }
+    }
+
+    private async Task CreateAddress()
+    {
+        var IsNotValid = await InvalidSubmit();
+        if (IsNotValid)
+            return;
+
+        //var sanitizer = new HtmlSanitizer();
+        //var desc = await QuillHtml.GetHTML();
+        //var sanitizedDesc = sanitizer.Sanitize(desc);
+
+        //addressDTO.AddressDescription = sanitizedDesc;
+        //addressDTO.UserId = User.Id;
+
+        var DoesExists = await _addressRepository.DoesAddressExists(SD.AddressApiPath,"DoesAddressExists",Token,addressDTO);
+
+        if (DoesExists)
+        {
+            await _jsRuntime.ToastrError($"The Address Title '{addressDTO.AddressTitle}' Already Exists");
+            return;    
+        }
+
+        var isCreated = await _addressRepository.CreateAsync(SD.AddressApiPath, addressDTO, Token);
+
+        if (isCreated)
+        {
+            await _jsRuntime.ToastrSuccess("Created Successfuly");
+            _navigationManager.NavigateTo("/Dashboard/Addresses");
+            return;
+        }
+        else
+        {
+            await _jsRuntime.ToastrError("Something Went Wrong");
+            return;
+        }
+
+    }
+
+
+
+    private async Task<bool> InvalidSubmit()
+    {
+        if (addressDTO.AddressTitle is null)
+        {
+            await _jsRuntime.ToastrError("Title Is Required");
+            return true;
+        }
+
+        if (addressDTO.PhoneNo is null)
+        {
+            await _jsRuntime.ToastrError("PhoneNo Is Required");
+            return true;
+        }
+        if (addressDTO.PROVINCE is null)
+        {
+            await _jsRuntime.ToastrError("Province Is Required");
+            return true;
+        }
+        if (addressDTO.Town is null)
+        {
+            await _jsRuntime.ToastrError("Town Is Required");
+            return true;
+        }
+        if (addressDTO.Zipcode is null)
+        {
+            await _jsRuntime.ToastrError("Zipcode Is Required");
+            return true;
+        }
+        
+        if (addressDTO.AddressDescription is null)
+        {
+            await _jsRuntime.ToastrError("Address Description Is Null");
+            return true;
+        }
+        return false;
+
+    }
+
+}

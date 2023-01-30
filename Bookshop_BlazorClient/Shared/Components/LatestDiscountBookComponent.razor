@@ -1,0 +1,66 @@
+﻿@inject IBookRepository _bookRepository
+@inject IJSRuntime _jsRuntime
+@inject IHashids _hashId
+@using System.Timers
+<div class="col mb-3">
+    <div class="card">
+        <img src="@discountedBook.Image" height="200" width="200" class="card-img-top">
+        <div class="card-body">
+            <h4 class="card-title">@discountedBook.Title</h4>
+            <h5 class="card-text">
+                 @days Day(s)/@hours Hour(s)/@mins Minute(s)/@seconds Second(s) Remaining
+            </h5>
+        </div>
+        <ul class="list-group list-group-flush">
+           <s> <li class="list-group-item"> Old Price : @discountedBook.Price.ToString("C")</li></s>
+              @{
+                var discountPrice = DiscountCalculator.CalculateDiscount(discountedBook.Price, discount.DiscountPercent);
+            }
+            
+            <li class="list-group-item"> Discount Percentage : %@discount.DiscountPercent</li>
+            <li class="list-group-item"> New Price : @discountPrice.ToString("C")</li>
+            <li class="list-group-item center-loading"> <a href="/books/BookDetails/@_hashId.Encode(discountedBook.BookId)" class="btn btn-outline-success">Go To Book Details</a></li>
+        </ul>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public DiscountDTO discount { get; set; }
+
+    public BookDTO discountedBook { get; set; } = new();
+
+    [Parameter]
+    public int discountCount { get; set; }
+
+
+    private Timer timer = new(1000);
+
+    public int days, hours, mins, seconds;
+
+    //public List<string> bookCategories { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+
+        discountedBook = await _bookRepository.GetAsync(SD.BooksApiPath, discount.BookId);
+        //bookCategories = await _bookRepository.GetbookCategoryTitle(SD.BooksApiPath, "GetbookCategoryTitle", discountedBook.BookId);
+        timer.Elapsed += (senders, EventArgs) => Countdown(discount.endDate);
+        timer.Start();
+    }
+
+
+    private void Countdown(DateTime endDate)
+    {
+        var distance = endDate - DateTime.Now;
+        days = distance.Days;
+        hours = distance.Hours;
+        mins = distance.Minutes;
+        seconds = distance.Seconds;
+
+        StateHasChanged();
+    }
+
+
+
+}

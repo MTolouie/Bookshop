@@ -1,0 +1,80 @@
+﻿@inject ITranslatorRepository _translatorRepository
+@inject IJSRuntime _jsRuntime
+@inject IHashids _hashId
+@attribute [Authorize(Roles = SD.Role_Admin)]
+
+
+<div class="simple-form">
+
+    <div class="form-group">
+        <label for="first-name">Category Title</label>
+        <input @bind="@HashedCatId" type="hidden" class="form-control" />
+        <input @bind="@translator.TranslatorName" type="text" class="form-control" />
+    </div>
+    @if (IsProcess)
+    {
+        <button class="btn btn-outline-primary btn-block"><i class="fade fa-spin fa-spinner"></i> Loading ...</button>
+        <button class="btn btn-outline-secondary btn-block"><i class="fade fa-spin fa-spinner"></i> Loading ...</button>
+    }
+    else
+    {
+        <button @onclick="SubmitForm" class="btn btn-outline-primary btn-block">Update</button>
+        <button @onclick="Cancel" class="btn btn-outline-secondary btn-block">Cancel</button>
+    }
+</div>
+
+@code {
+
+    public TranslatorDTO translator { get; set; } = new();
+
+    [Parameter]
+    public int translatorId { get; set; }
+
+
+    public bool IsProcess { get; set; } = false;
+
+    public string HashedCatId { get; set; }
+
+    [CascadingParameter]
+    BlazoredModalInstance ModalInstance { get; set; }
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        translator =  await _translatorRepository.GetTranslatorById(translatorId);
+        HashedCatId = _hashId.Encode(translatorId);
+    }
+
+
+    async Task SubmitForm()
+    {
+        IsProcess = true;
+        if (string.IsNullOrWhiteSpace(translator.TranslatorName))
+        {
+            await _jsRuntime.ToastrError("Name Cannot Be Null");
+            IsProcess = false;
+            return;
+        }
+        translator.TranslatorId = _hashId.Decode(HashedCatId)[0];
+        var status = await _translatorRepository.UpdateTranslator(translatorId, translator);
+        if (status)
+        {
+            await _jsRuntime.ToastrSuccess("Updated Successfuly");
+            await ModalInstance.CloseAsync(ModalResult.Ok($"Updated Successfuly"));
+            IsProcess = false;
+
+        }
+        else
+        {
+            await _jsRuntime.ToastrError("Something Went Wrong");
+            await ModalInstance.CancelAsync();
+            IsProcess = false;
+        }
+    }
+
+    async Task Cancel()
+    {
+        await ModalInstance.CancelAsync();
+
+    }
+}

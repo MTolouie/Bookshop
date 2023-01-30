@@ -1,0 +1,148 @@
+﻿@inject NavigationManager _navigationManager
+@inject IHashids _hashId
+@inject ILocalStorageService _localStorage
+@inject ICartRepository _cartRepository
+@inject IWishlistRepository _wishlistRepository
+
+<div class="humberger__menu__wrapper">
+    <div class="humberger__menu__logo">
+        <a href="#"><img src="img/logo.png" alt=""></a>
+    </div>
+    <div class="humberger__menu__cart">
+        <ul>
+            <li>
+                <a href="/Wishlist/Index/1">
+                    <i class="fa fa-heart"></i>
+                    @if (wishlistsDTO is not null && wishlistsDTO.Any())
+                    {
+                        <span>@wishlistsDTO.Count()</span>
+                    }
+                    else
+                    {
+                        <span>0</span>
+                    }
+                </a>
+            </li>
+            <li>
+                <a href="#">
+                    <i class="fa fa-shopping-bag"></i>
+                    @if (CartDTO.CartDetails is not null && CartDTO.CartDetails.Any())
+                    {
+                        <span>@CartDTO.CartDetails.Count</span>
+                    }
+                    else
+                    {
+                        <span>0</span>
+                    }
+                </a>
+            </li>
+        </ul>
+        <div class="header__cart__price">
+            item:
+            @if (CartDTO.CartDetails is not null && CartDTO.CartDetails.Any())
+            {
+                <span>@CartDTO.CartSum.ToString("C")</span>
+            }
+            else
+            {
+                <span>$0</span>
+            }
+        </div>
+    </div>
+    <div class="humberger__menu__widget">
+        <div class="header__top__right__auth">
+            <AuthorizeView>
+                <Authorized>
+                    <a href="/Account/Logout"><i class="fa fa-power-off"></i> Logout</a>
+                    <a href="/Dashboard/Index"><i class="fa fa-user"></i>Profile</a>
+                </Authorized>
+                <NotAuthorized>
+                    <a href="/Account/Login"><i class="fa fa-user"></i> Login</a>
+                    <a href="/Account/Register"><i class="fa fa-registered"></i> Register</a>
+                </NotAuthorized>
+            </AuthorizeView>
+        </div>
+    </div>
+
+    <div id="mobile-menu-wrap">
+        <div class="slicknav_menu">
+            <nav class="humberger__menu__nav mobile-menu">
+                <ul>
+                    <li><a href="/">Home</a></li>
+                    <li><a href="/books/index/1/@_hashId.Encode(0)/@_hashId.Encode(0)/0/0">Shop</a></li>
+                    <li>
+                        <a href="#">Pages</a>
+                        <ul class="header__menu__dropdown">
+                            <li><a href="./shop-details.html">Shop Details</a></li>
+                            <li><a href="./shoping-cart.html">Shoping Cart</a></li>
+                            <li><a href="./checkout.html">Check Out</a></li>
+                            <li><a href="./blog-details.html">Blog Details</a></li>
+                        </ul>
+                    </li>
+                    <li><a href="./blog.html">Blog</a></li>
+                    <li><a href="./contact.html">Contact</a></li>
+                </ul>
+            </nav>
+        </div>
+    </div>
+    <div class="header__top__right__social">
+        <a href="#"><i class="fa fa-facebook"></i></a>
+        <a href="#"><i class="fa fa-twitter"></i></a>
+        <a href="#"><i class="fa fa-linkedin"></i></a>
+        <a href="#"><i class="fa fa-pinterest-p"></i></a>
+    </div>
+    <div class="humberger__menu__contact">
+        <ul>
+            <li>
+                <AuthorizeView>
+                    <Authorized>
+
+                        <i class="fa fa-user"> Welcome @context.User.Identity.Name </i>
+
+                    </Authorized>
+                    <NotAuthorized>
+                        <i class="fa fa-envelope">  hello@colorlib.com</i>
+                    </NotAuthorized>
+                </AuthorizeView>
+            </li>
+            <li>Free Shipping for all Order of $99</li>
+        </ul>
+    </div>
+</div>
+@code {
+    //public string? q { get; set; }
+
+    //private async Task SubmitSearch()
+    //{
+    //    if (q is not null)
+    //    {
+    //        _navigationManager.NavigateTo($"/Search/Index/{q}");
+    //    }
+    //    return;
+    //}
+
+    public CartDTO CartDTO { get; set; } = new();
+
+    public UserDTO UserDTO { get; set; } = new();
+
+    public IEnumerable<WishlistDTO> wishlistsDTO { get; set; } = new List<WishlistDTO>();
+
+    public string Token { get; set; }
+
+    //protected override async Task OnInitializedAsync()
+    //{
+
+    //}
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        UserDTO = await _localStorage.GetItemAsync<UserDTO>(SD.Local_UserDetails);
+        Token = await _localStorage.GetItemAsync<string>(SD.Local_Token);
+        if (UserDTO is not null && Token is not null)
+        {
+            CartDTO = await _cartRepository.GetUserCart(SD.CartApiPath, "GetUserCart", UserDTO.Id, Token);
+            (wishlistsDTO, _) = await _wishlistRepository.GetAllUserWishlists(SD.WishlistApiPath, UserDTO.Id, Token);
+        }
+    }
+
+}

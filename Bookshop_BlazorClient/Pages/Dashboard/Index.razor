@@ -1,0 +1,107 @@
+﻿@page "/Dashboard/Index"
+@inject IAccountRepository _accountRepository
+@inject ICartRepository _cartRepository
+@inject IAddressRepository _addressRepository
+@inject NavigationManager _navigationManager
+@inject ILocalStorageService _localStorage
+@inject IHashids _hashId
+@attribute [Authorize(Roles = SD.Role_Customer)]
+
+<HeadContent>
+    <link rel="stylesheet" href="css/Dashboard.css" type="text/css">
+</HeadContent>
+
+<div class="container">
+    <div class="main-body">
+
+        <!-- Breadcrumb -->
+        <nav aria-label="breadcrumb" class="main-breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/">Home</a></li>
+                <li class="breadcrumb-item active" aria-current="page">User Profile</li>
+            </ol>
+        </nav>
+        <!-- /Breadcrumb -->
+
+        <div class="row gutters-sm">
+            <div class="col-md-4 mb-3">
+                <DashboardSideNav UserName="@User.FullName"></DashboardSideNav>
+                <DashboardInfoNav></DashboardInfoNav>
+            </div>
+            <div class="col-md-8">
+                <h2>Recent Buys</h2>
+                <div class="card mb-3">
+                    <div class="card-body">
+
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Cart Id #</th>
+                                    <th>Is Paid</th>
+                                    <th>Placed On</th>
+                                    <th>Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (CartDTO is not null)
+                                {
+                                    @foreach (var cart in CartDTO)
+                                    {
+                                        <tr>
+                                            <td>#@_hashId.Encode(cart.CartId)</td>
+                                            <td>@(cart.IsFinally ? "Paid":"Not Paid")</td>
+                                            <td>@cart.CreateDate.ToGregorian()</td>
+                                            <td>
+                                                <div class="dash__table-total">
+
+                                                    <span>@cart.CartSum.ToString("C")</span>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+
+                                }
+                                else
+                                {
+
+                                    <tr>
+                                        <td colspan="5">
+                                            <h2>No Data</h2>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+
+
+            </div>
+        </div>
+
+    </div>
+</div>
+@code {
+    public UserDTO User { get; set; } = new();
+
+    public IEnumerable<CartDTO> CartDTO { get; set; } = new List<CartDTO>();
+    //[CascadingParameter]
+    //public Task<AuthenticationState> AuthenticationState{ get; set; }
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        //var authenticationState = await AuthenticationState;
+        User = await _localStorage.GetItemAsync<UserDTO>(SD.Local_UserDetails);
+        var token = await _localStorage.GetItemAsync<string>(SD.Local_Token);
+        if (User is null || token is null)
+        {
+            _navigationManager.NavigateTo("/Account/Login");
+            return;
+        }
+        CartDTO = await _cartRepository.GetUserRecentOrders(SD.CartApiPath, "GetUserRecentOrders", User.Id, token);
+
+    }
+
+}

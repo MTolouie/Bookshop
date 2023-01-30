@@ -1,0 +1,70 @@
+﻿@inject IJSRuntime _jsRuntime
+@inject ICategoryRepository _categoryRepository
+@attribute [Authorize(Roles = SD.Role_Admin)]
+<!-- Modal -->
+
+
+<div class="simple-form">
+
+    <div class="form-group">
+        <label for="first-name">Category Title</label>
+        <input @bind="CategoryDTO.CatTitle" type="text" class="form-control" id="first-name" placeholder="Enter Category Name" />
+    </div>
+    @if (IsProcess)
+    {
+        <button @onclick="SubmitForm" class="btn btn-outline-primary btn-block"><i class="fade fa-spin fa-spinner"></i> Loading ...</button>
+    <button @onclick="Cancel" class="btn btn-outline-secondary btn-block"><i class="fade fa-spin fa-spinner"></i> Loading ...</button>
+    }
+    else
+    {
+        <button @onclick="SubmitForm" class="btn btn-outline-primary btn-block">Submit</button>
+    <button @onclick="Cancel" class="btn btn-outline-secondary btn-block">Cancel</button>
+    }
+</div>
+@code {
+
+    public CategoryDTO CategoryDTO { get; set; } = new();
+
+    [CascadingParameter]
+    BlazoredModalInstance ModalInstance { get; set; }
+
+    public bool IsProcess { get; set; } = false;
+
+    async Task SubmitForm()
+    {
+        IsProcess = true;
+        if(string.IsNullOrWhiteSpace(CategoryDTO.CatTitle))
+        {
+            await _jsRuntime.ToastrError("Title Cannot Be Null");
+            IsProcess = false;
+            return;
+        }
+        var IsUnique = await _categoryRepository.IsCatTitleUnique(CategoryDTO.CatTitle);
+        if (IsUnique)
+        {
+            var status = await _categoryRepository.AddCategory(CategoryDTO);
+            if (status)
+            {
+                await ModalInstance.CloseAsync(ModalResult.Ok($"Created Successfuly"));
+                await _jsRuntime.ToastrSuccess("Created Successfuly");
+                IsProcess = false;
+            }
+            else
+            {
+                 await _jsRuntime.ToastrError("Something Went Wrong");
+                 IsProcess = false;
+            }
+        }
+        else
+        {
+            await ModalInstance.CancelAsync();
+            await _jsRuntime.ToastrError("This Category With This Name Exists");
+            IsProcess = false;
+        }
+    }
+    async Task Cancel()
+    {
+        await ModalInstance.CancelAsync();
+    }
+
+}

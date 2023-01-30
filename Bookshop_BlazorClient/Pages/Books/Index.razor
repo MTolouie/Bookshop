@@ -1,0 +1,311 @@
+﻿@page "/Books/Index"
+@page "/Books/Index/{PageId:int}"
+@page "/Books/Index/{PageId:int}/{CategoryId}/{PublisherId}"
+@page "/Books/Index/{PageId:int}/{CategoryId}/{PublisherId}/{startPrice}/{endPrice}"
+@inject IJSRuntime _jsRuntime
+@inject ICategoryRepository _categoryRepository
+@inject IBookRepository _bookRepository
+@inject IPublisherRepository _publisherRepository
+@inject NavigationManager _navigationManager
+@inject IHashids _hashId
+
+
+<section class="product spad">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-3 col-md-5">
+                <div class="sidebar">
+                    <div class="sidebar__item">
+                        <h4>ClearAllFilters</h4>
+                        <a @onclick="ClearAllFilters" class="btn btn-outline-danger btn-block">ClearAllFilters</a>
+                    </div>
+                    <div class="sidebar__item">
+                        <div class="card border-success mb-3" style="max-width: 18rem;">
+                            <div class="card-header"><h5>Categories</h5></div>
+                            <div class="card-body text-dark">
+                                <ul>
+                                    @if (Categories.Any() && Categories is not null)
+                                    {
+                                        <li style="@(_hashId.Decode(CategoryId)[0] == 0? "background-color:#74F772;border-radius: .5rem;":null)">
+                                            <a style="text-align:center;cursor:pointer;" @onclick="()=> FilterByCategory(0,SelectedPublisherId)">All</a>
+                                        </li>
+                                        @foreach (var category in Categories)
+                                        {
+
+                                            <li style="@(_hashId.Decode(CategoryId)[0] == category.catId? "background-color:#74F772;border-radius: .5rem;":null)" class="mt-2">
+                                                <a style="text-align:center;cursor:pointer;" @onclick="()=> FilterByCategory(category.catId,SelectedPublisherId)">@category.CatTitle</a>
+                                            </li>
+
+                                        }
+                                    }
+                                    else
+                                    {
+                                        if (IsCategoryLoading)
+                                        {
+                                            <div class="center-loading">
+                                                <img src="/img/loading.gif" height="200" width="200">
+                                            </div>
+
+                                        }
+                                        else
+                                        {
+                                            <div class="alert alert-danger text-center">
+                                                <h2>Something Went Wrong</h2>
+                                            </div>
+                                        }
+                                    }
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="sidebar__item">
+                        <div class="price-range-wrap">
+                            <div class="range-slider">
+                                <div class="card border-success mb-3" style="max-width: 18rem;">
+                                    <div class="card-header"><h5>Price</h5></div>
+                                    <div class="card-body text-dark">
+                                        <div class="row">
+                                            <div class="form-group col-md-6">
+                                                <label for="inputEmail4">Start Price</label>
+                                                <input @bind="BindedStartPrice" class="form-control">
+                                            </div>
+                                            <div class="form-group col-md-6">
+                                                <label for="inputPassword4">End Price</label>
+                                                <input @bind="BindedEndPrice" class="form-control">
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <a @onclick="FilterByPrice" class="btn btn-outline-success btn-block">Filter</a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="sidebar__item">
+                        <div class="card border-success mb-3" style="max-width: 18rem;">
+                            <div class="card-header"><h5>Publishers</h5></div>
+                            <div class="card-body text-dark">
+
+                                @if (Publishers is not null && Publishers.Any())
+                                {
+
+                                    <div class="sidebar">
+                                            <ul>
+                                                <li style="@(_hashId.Decode(PublisherId)[0] == 0? "background-color:#74F772;border-radius: .5rem;":null)">
+                                                    <a style="text-align:center;cursor:pointer;" @onclick="()=>FilterByPublisher(0,SelectedCategoryId)">All</a>
+                                                </li>
+                                            </ul>   
+                                    </div>
+                                    @foreach (var publisher in Publishers)
+                                    {
+                                        <div class="sidebar mt-2">
+                                                <ul>
+                                                    <li style="@(_hashId.Decode(PublisherId)[0] == publisher.PublisherId? "background-color:#74F772;border-radius: .5rem;":null)">
+                                                        <a style="text-align:center;cursor:pointer;" @onclick="()=>FilterByPublisher(publisher.PublisherId,SelectedCategoryId)">@publisher.PublisherTitle</a>
+                                                    </li>
+                                                </ul>
+                                        </div>
+                                    }
+                                }
+                                else
+                                {
+                                    if (IsPublisherLoading)
+                                    {
+                                        <div class="center-loading">
+                                            <img src="/img/loading.gif" height="200" width="200">
+                                        </div>
+
+                                    }
+                                    else
+                                    {
+                                        <div class="alert alert-danger text-center">
+                                            <h2>Something Went Wrong</h2>
+                                        </div>
+                                    }
+                                }
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-9 col-md-7">
+                @if (Books.Any() && Books is not null)
+                {
+                    <div class="row">
+                        @*<div class="col-lg-4 col-md-6 col-sm-6">*@
+                        @foreach (var book in Books)
+                        {
+                            <BookComponent book="book"></BookComponent>
+                        }
+                        @*</div>*@
+                    </div>
+                }
+                else
+                {
+                    if (IsBookLoading)
+                    {
+                        <div class="center-loading">
+                            <img src="/img/loading.gif" height="200" width="200">
+                        </div>
+
+                    }
+                    else
+                    {
+                        <div class="alert alert-danger text-center">
+                            <h2>Something Went Wrong</h2>
+                        </div>
+                    }
+                }
+
+                @if (PageCount > 0)
+                {
+                    <div class="product__pagination">
+                        @for (int i = 1; i <= PageCount; i++)
+                        {
+                            <a href="/books/index/@i/@_hashId.Encode(SelectedCategoryId)/@_hashId.Encode(SelectedPublisherId)">@i</a>
+                        }
+                    </div>
+                }
+
+            </div>
+        </div>
+    </div>
+</section>
+
+
+
+@code {
+    [Parameter]
+    public string? CategoryId { get; set; }
+
+    [Parameter]
+    public string? PublisherId { get; set; }
+
+    [Parameter]
+    public int PageId { get; set; }
+
+    [Parameter]
+    public string startPrice { get; set; } = "0";
+
+    [Parameter]
+    public string endPrice { get; set; } = "0";
+
+    public int PageCount { get; set; }
+
+    public double BindedStartPrice { get; set; }
+
+    public double BindedEndPrice { get; set; }
+
+    public int? DecodedCategoryId { get; set; }
+
+    public int? DecodedPublisherId { get; set; }
+
+    public int SelectedPublisherId { get; set; }
+
+    public int SelectedCategoryId { get; set; }
+
+    public bool IsCategoryLoading { get; set; }
+
+    public bool IsPublisherLoading { get; set; }
+
+    public bool IsBookLoading { get; set; }
+
+    public IEnumerable<BookDTO> Books { get; set; } = new List<BookDTO>();
+
+    public IEnumerable<CategoryDTO> Categories { get; set; } = new List<CategoryDTO>();
+
+    public IEnumerable<PublisherDTO> Publishers { get; set; } = new List<PublisherDTO>();
+
+
+
+    private async Task LoadData(int pageId = 1, int categoryId = 0, double startPrice = 0, double endPrice = 0, int publisherId = 0)
+    {
+        IsBookLoading = true;
+        StateHasChanged();
+        (Books, PageCount) = await _bookRepository.GetBooksWithPagination(SD.BooksApiPath, "GetBooksWithPagination", pageId, categoryId, startPrice, endPrice, publisherId);
+        IsBookLoading = false;
+        StateHasChanged();
+    }
+
+
+    protected override async Task OnInitializedAsync()
+    {
+
+        //SelectedCategoryId = _hashId.Decode(CategoryId)[0];
+        IsCategoryLoading = true;
+        StateHasChanged();
+        Categories = await _categoryRepository.GetAllAsync(SD.CategoriesApiPath);
+        IsCategoryLoading = false;
+        StateHasChanged();
+
+        IsPublisherLoading = true;
+        StateHasChanged();
+        Publishers = await _publisherRepository.GetPublishersWithoutPagination(SD.PubnlishersApiPath, "GetPublishersWithoutPagination");
+        IsPublisherLoading = false;
+        StateHasChanged();
+
+        if (CategoryId is null && PublisherId is null)
+        {
+            await LoadData(PageId);
+        }
+        else
+        {
+            DecodedCategoryId = _hashId.Decode(CategoryId)[0];
+            DecodedPublisherId = _hashId.Decode(PublisherId)[0];
+            await LoadData(pageId: PageId, categoryId: DecodedCategoryId.Value, startPrice: BindedStartPrice, endPrice: BindedEndPrice, publisherId: DecodedPublisherId.Value);
+        }
+    }
+
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (CategoryId is null && PublisherId is null)
+        {
+            return;
+        }
+        else
+        {
+            DecodedCategoryId = _hashId.Decode(CategoryId)[0];
+            DecodedPublisherId = _hashId.Decode(PublisherId)[0];
+            await LoadData(pageId: PageId, categoryId: DecodedCategoryId.Value, startPrice: BindedStartPrice, endPrice: BindedEndPrice, publisherId: DecodedPublisherId.Value);
+        }
+    }
+
+    private async Task FilterByCategory(int categoryId, int publisherId)
+    {
+        SelectedCategoryId = categoryId;
+        _navigationManager.NavigateTo($"/books/index/1/{_hashId.Encode(categoryId)}/{_hashId.Encode(publisherId)}/{BindedStartPrice}/{BindedEndPrice}");
+    }
+
+    private async Task FilterByPrice()
+    {
+        _navigationManager.NavigateTo($"/books/index/1/{_hashId.Encode(SelectedCategoryId)}/{_hashId.Encode(SelectedPublisherId)}/{BindedStartPrice}/{BindedEndPrice}");
+    }
+
+    private async Task FilterByPublisher(int publisherId, int categoryId)
+    {
+        SelectedPublisherId = publisherId;
+        DecodedCategoryId = categoryId;
+        if (DecodedCategoryId is not null)
+        {
+            _navigationManager.NavigateTo($"/books/index/1/{_hashId.Encode(categoryId)}/{_hashId.Encode(publisherId)}/{BindedStartPrice}/{BindedEndPrice}");
+        }
+        else
+        {
+            _navigationManager.NavigateTo($"/books/index/1/{_hashId.Encode(categoryId)}/{_hashId.Encode(publisherId)}/{BindedStartPrice}/{BindedEndPrice}");
+        }
+
+    }
+
+    private async Task ClearAllFilters()
+    {
+        BindedStartPrice = 0;
+        BindedEndPrice = 0;
+        SelectedCategoryId = 0;
+        SelectedPublisherId = 0;
+        _navigationManager.NavigateTo($"/books/index/1/{_hashId.Encode(0)}/{_hashId.Encode(0)}/{BindedStartPrice}/{BindedEndPrice}");
+    }
+}

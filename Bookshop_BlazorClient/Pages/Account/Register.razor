@@ -1,0 +1,223 @@
+﻿@page "/Account/Register"
+@inject IJSRuntime _jsRuntime
+@inject IAccountRepository _accountRepository
+
+
+
+<div class="container">
+    <div class="col-md-12 mt-5 mb-5">
+        <center>
+        <section>
+            <EditForm Model="userRequest" OnValidSubmit="RegisterUser" OnInvalidSubmit="InvalidSubmit" >
+
+                <div class="col-lg-6 text-center">
+
+                    <div class="card">
+                        <div class="card-header">Register Form</div>
+
+                        <div class="card-body card-block">
+
+                            <div class="form-group">
+                                <DataAnnotationsValidator></DataAnnotationsValidator>
+                                <div style="color:red;">
+                                    <ValidationSummary></ValidationSummary>
+                                </div>
+                                <div class="input-group">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text">Name</span>
+                                    </div>
+                                    <InputText @bind-Value="userRequest.FullName" class="form-control" type="text" id="reg-fname" placeholder="First Name"></InputText>
+                                    <div class="input-group-prepend"> <span class="input-group-text"><i class="fa fa-user"></i></span></div>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <div class="input-group">
+                                     <div class="input-group-prepend">
+                                        <span class="input-group-text">Email</span>
+                                    </div>
+                                    <InputText @bind-Value="userRequest.Email" class="form-control" type="text" id="reg-email" placeholder="Enter E-mail"></InputText>
+                                    <div class="input-group-prepend"> <span class="input-group-text"><i class="fa fa-envelope"></i></span></div>
+                                </div>
+                            </div>
+                              <div class="form-group">
+                                <div class="input-group">
+                                     <div class="input-group-prepend">
+                                        <span class="input-group-text">Phone No</span>
+                                    </div>
+                                   <InputText @bind-Value="userRequest.PhoneNo" class="form-control"  id="reg-phone" placeholder="Enter Phone Number"></InputText>
+                                    <div class="input-group-prepend"> <span class="input-group-text"><i class="fa fa-phone"></i></span></div>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <div class="input-group">
+                                     <div class="input-group-prepend">
+                                        <span class="input-group-text">Password</span>
+                                    </div>
+                                   <InputText @bind-Value="userRequest.Password" class="form-control" type="password" id="reg-password" placeholder="Enter Password"></InputText>
+                                    <div class="input-group-prepend"> <span class="input-group-text"><i class="fa fa-asterisk"></i></span></div>
+                                </div>
+                            </div>
+                             <div class="form-group">
+                                <div class="input-group">
+                                     <div class="input-group-prepend">
+                                        <span class="input-group-text">Repeat Password</span>
+                                    </div>
+                                   <InputText @bind-Value="userRequest.ConfirmPassword" class="form-control" type="password" id="reg-repeatpassword" placeholder="Repeat Password"></InputText>
+                                    <div class="input-group-prepend"> <span class="input-group-text"><i class="fa fa-asterisk"></i></span></div>
+                                </div>
+                            </div>
+                            <div class="form-actions form-group">
+                                <button class="btn btn-outline-success btn-block" type="submit">CREATE</button>
+                            </div>
+                            <div class="checkbox">
+                                <label class="form-label">
+                                    <a class="gl-link" href="/Account/Login">Already Have An Account</a>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </EditForm>
+
+        </section>
+        </center>
+    </div>
+</div>
+
+
+
+
+
+
+@*
+
+
+
+
+
+<div class="u-s-p-b-60">
+
+    <!--====== Section Intro ======-->
+    <!--====== End - Section Intro ======-->
+    <!--====== Section Content ======-->
+    <div class="section__content">
+        <div class="container">
+            <div class="row row--center">
+                <div class="col-lg-6 col-md-8 u-s-m-b-30">
+                    <div class="l-f-o">
+                        <div class="l-f-o__pad-box">
+                            <h1 class="gl-h1">Register</h1>
+                            <EditForm Model="userRequest" OnValidSubmit="RegisterUser" OnInvalidSubmit="InvalidSubmit"  class="l-f-o__form">
+                                <div class="u-s-m-b-30" style="color:red">
+
+                                    <DataAnnotationsValidator></DataAnnotationsValidator>
+                                    <ValidationSummary></ValidationSummary>
+                                   </div>
+                                <div class="u-s-m-b-30">
+
+                                    <label class="gl-label" for="reg-fname">Full NAME *</label>
+
+                                    <InputText @bind-Value="userRequest.FullName" class="input-text input-text--primary-style" type="text" id="reg-fname" placeholder="First Name"></InputText>
+                                </div>
+                                <div class="u-s-m-b-30">
+
+                                    <label class="gl-label" for="reg-email">E-MAIL *</label>
+
+                                    <InputText @bind-Value="userRequest.Email" class="input-text input-text--primary-style" type="text" id="reg-email" placeholder="Enter E-mail"></InputText>
+                                </div>
+                                 <div class="u-s-m-b-30">
+
+                                    <label class="gl-label" for="reg-email">PHONE NUMBER *</label>
+
+                                    <InputText @bind-Value="userRequest.PhoneNo" class="input-text input-text--primary-style"  id="reg-phone" placeholder="Enter Phone Number"></InputText>
+                                </div>
+                                <div class="u-s-m-b-30">
+
+                                    <label class="gl-label" for="reg-password">PASSWORD *</label>
+
+                                    <InputText @bind-Value="userRequest.Password" class="input-text input-text--primary-style" type="password" id="reg-password" placeholder="Enter Password"></InputText>
+                                </div>
+
+                                <div class="u-s-m-b-30">
+
+                                    <label class="gl-label" for="reg-password">REPEAT PASSWORD *</label>
+
+                                    <InputText @bind-Value="userRequest.ConfirmPassword" class="input-text input-text--primary-style" type="password" id="reg-repeatpassword" placeholder="Repeat Password"></InputText>
+                                </div>
+                                <div class="gl-inline">
+                                    <div class="u-s-m-b-15">
+
+                                        <button class="btn btn--e-transparent-brand-b-2" type="submit">CREATE</button>
+                                    </div>
+                                    <div class="u-s-m-b-15">
+                                        <a class="gl-link" href="/Account/Login">Already Have An Account</a>
+
+                                    </div>
+
+                                </div>
+
+
+                            </EditForm>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!--====== End - Section Content ======-->
+</div>*@
+<!--====== End - Section 2 ======-->
+@code {
+    public UserRequestDTO userRequest { get; set; } = new();
+
+    private async Task RegisterUser()
+    {
+        var IsInvalid = await InvalidSubmit();
+
+        if (!IsInvalid)
+        {
+            var response = await _accountRepository.SignUp(userRequest);
+            if (response.IsRegisterationSuccessful)
+            {
+                await _jsRuntime.Swal("success","Confirm Your Email","Confirmation Code Sent To Your Email");
+
+            }
+            else
+            {
+                foreach (var error in response.Errors)
+                {
+                await _jsRuntime.ToastrError(error);   
+                }
+            }
+        }
+
+    }
+
+
+    private async Task<bool> InvalidSubmit()
+    {
+        if(userRequest.FullName is null)
+        {
+            await _jsRuntime.ToastrError($"Fullname Is null");
+            return true;
+        }
+        if(userRequest.Email is null)
+        {
+            await _jsRuntime.ToastrError($"Email Is null");
+            return true;
+        }
+        if(userRequest.PhoneNo is null)
+        {
+            await _jsRuntime.ToastrError($"Phone Number Is null");
+            return true;
+        }
+        if(userRequest.Password is null)
+        {
+            await _jsRuntime.ToastrError($"Password Is null");
+            return true;
+        }
+        return false;
+    }
+
+
+}

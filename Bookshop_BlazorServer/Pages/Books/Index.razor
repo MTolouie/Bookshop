@@ -1,0 +1,332 @@
+﻿@page "/Books/Index/{pageid:int}"
+@inject IBookRepository _bookRepository
+@inject NavigationManager _navigationManager
+@inject IJSRuntime _jsRuntime
+@inject ICategoryRepository _categoryRepository
+@inject IAuthorRepository _authorRepository
+@inject IHashids _hashId
+@attribute [Authorize(Roles = SD.Role_Admin)]
+
+<PageTitle>Books</PageTitle>
+
+<!-- Orders -->
+
+<div class="col-mg-12" style="margin-left:15px;margin-right:15px;margin-top:100px;">
+    <a class="btn btn-outline-primary btn-block" href="/Books/Create">Create</a>
+    <div class="card" style="margin-top:10px;">
+        <div class="card-body">
+            <h2 class="box-title text-center">Books</h2>
+            <EditForm Model="Filter" OnSubmit="FilterTable">
+                <div class="form-row mt-4">
+                    <div class="form-group col-md-4">
+                        <label for="inputEmail4">Name</label>
+                        <InputText @bind-Value="Filter.Name" type="text" class="form-control" id="inputEmail4" placeholder="Book Title"></InputText>
+                    </div>
+                    <div class="form-group col-md-4">
+                        <label>Categories</label>
+                        <BlazoredTypeahead SearchMethod="GetCategories"
+                                           @bind-Value="Filter.SelectedCategory"
+                                           placeholder="Search by title..."
+                                           Context="categoryContext"
+                                           ShowDropDownOnFocus=true>
+                            <SelectedTemplate>
+                                @categoryContext.CatTitle
+                            </SelectedTemplate>
+                            <ResultTemplate Context="category">
+                                @category.CatTitle
+                            </ResultTemplate>
+                        </BlazoredTypeahead>
+                    </div>
+                    <div class="form-group col-md-4">
+                        <label>Authors</label>
+                        <BlazoredTypeahead SearchMethod="GetAuthors"
+                                           @bind-Value="Filter.SelectedAuthor"
+                                           placeholder="Search by Name..."
+                                           Context="authorContext"
+                                           ShowDropDownOnFocus=true>
+                            <SelectedTemplate>
+                                @authorContext.AuthorName
+                            </SelectedTemplate>
+                            <ResultTemplate Context="author">
+                                @author.AuthorName
+                            </ResultTemplate>
+                        </BlazoredTypeahead>
+                    </div>
+                </div>
+
+                <div class="form-row">
+
+                    <div class="form-group col-md-4">
+                        <label for="inputCity">FromDate</label>
+                        <InputDate @bind-Value="Filter.FromDate" class="form-control"></InputDate>
+                    </div>
+
+                    <div class="form-group col-md-4">
+                        <label for="inputState">To Date</label>
+                        <InputDate @bind-Value="Filter.ToDate" class="form-control"></InputDate>
+                    </div>
+
+                    <div class="form-row col-md-4">
+
+                        <div class="col-md-6">
+                            <a class="btn btn-outline-dark btn-block" style="margin-top:31px;" @onclick="NavigateToIndex"><i class="fa fa-eraser"></i></a>
+                        </div>
+                        <div class="col-md-6">
+                            <input type="submit" class="btn btn-outline-success btn-block" style="margin-top:31px;">@*<i class="fa fa-search"></i>*@
+                        </div>
+                    </div>
+
+                </div>
+            </EditForm>
+        </div>
+        <div class="card-body">
+            <div class="table-stats order-table ov-h">
+                @{
+                    int j = 1;
+                }
+
+
+                @if (bookDTOs.Any())
+                {
+                    <table class="table ">
+                        <thead>
+                            <tr>
+                                <th class="serial">#</th>
+                                <th class="avatar">Image</th>
+                                <th>Book Title</th>
+                                <th>Author</th>
+                                <th>Category</th>
+                                <th>Create Date</th>
+                                <th>Quantity</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+
+                            @foreach (var item in bookDTOs)
+                            {
+                                <tr>
+                                    <td class="serial">@(j++)</td>
+                                    <td class="avatar">
+                                        <div class="round-img">
+                                            <img class="img-thumbnail" src="@item.Image" alt="@item.Title">
+                                        </div>
+                                    </td>
+                                    <td>  <span class="name">@item.Title</span> </td>
+                                    @{
+
+                                        var author = GetAuthorByBookId(item.BookId);
+                                        var categories = GetBookCategoriesByBookId(item.BookId);
+                                    }
+
+                                    <td> <span class="product">@author</span> </td>
+                                    <td>
+                                        <span class="count">
+                                            @if (categories is not null)
+                                            {
+
+                                                foreach (var category in categories)
+                                                {
+                                                    <span class="badge badge-success mt-1">@category</span> <br>
+                                                }
+                                            }
+                                            else
+                                            {
+                                                <span>No Category</span>
+                                            }
+                                        </span>
+
+                                    </td>
+                                    <td><span class="count">@item.CreatedDate.ToGregorian()</span></td>
+                                    <td><span class="count">@item.Quantity</span></td>
+                                    <td>
+                                        <button class="btn btn-outline-danger" @onclick="()=>ShowDeleteModal(item.BookId)">Delete</button>
+                                        <a class="btn btn-outline-warning" href="/Books/edit/@_hashId.Encode(item.BookId)">Edit</a>
+                                        <a class="btn btn-outline-primary" href="/Books/Gallery/@_hashId.Encode(item.BookId)">Gallery</a>
+                                    </td>
+                                </tr>
+                            }
+
+
+                        </tbody>
+                    </table>
+                }
+                else
+                {
+                    if (IsLoading)
+                    {
+                        <div class="text-center">
+                            <img src="/AdminLayout/images/loader.gif" height="200" width="200">
+                        </div>
+
+                    }
+                    else
+                    {
+                        <div class="alert alert-danger text-center">
+                            <h2>No Data</h2>
+                        </div>
+                    }
+                }
+            </div> <!-- /.table-stats -->
+        </div>
+    </div> <!-- /.card -->
+    @if (PageCount > 0)
+    {
+        <ul class="pagination">
+            @for (int i = 1; i <= PageCount; i++)
+            {
+                <li class="page-item @(pageid == i ?"active" : "")"><a class="page-link mb-5" href="/books/index/@i">@i</a></li>
+            }
+        </ul>
+    }
+</div>  <!-- /.col-lg-8 -->
+<!-- /.orders -->
+@code {
+    [Parameter]
+    public int pageid { get; set; } = 1;
+
+    public int PageCount { get; set; }
+
+    public bool IsLoading { get; set; } = true;
+
+    public List<BookDTO> bookDTOs { get; set; } = new();
+
+    public List<AuthorDTO> authorsDTO { get; set; } = new();
+
+    public List<CategoryDTO> categoryDTOs { get; set; } = new();
+
+    public BookFilterViewModel Filter { get; set; } = new();
+
+    [CascadingParameter]
+    public IModalService Modal { get; set; }
+
+
+    private async Task LoadData(DateTime FromDate, DateTime ToDate, int PageId = 1, string BookTitle = "", string AuthorName = "", int CatId = 0)
+    {
+        (categoryDTOs, _) = await _categoryRepository.GetAllCategories();
+        (bookDTOs, PageCount) = _bookRepository.GetAllBooks(FromDate, ToDate, PageId, BookTitle, AuthorName, CatId);
+    }
+
+    private string GetAuthorByBookId(int bookId)
+    {
+        var author = _authorRepository.GetAuthorByBookId(bookId).GetAwaiter().GetResult();
+        return author.AuthorName;
+    }
+
+    private List<string> GetBookCategoriesByBookId(int bookId)
+    {
+        var category = _categoryRepository.GetBookCategoriesByBookId(bookId);
+        return category;
+    }
+
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            IsLoading = true;
+            StateHasChanged();
+            await LoadData(DateTime.MinValue, DateTime.MinValue);
+            IsLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        IsLoading = true;
+        StateHasChanged();
+        await LoadData(DateTime.MinValue, DateTime.MinValue, pageid);
+        IsLoading = false;
+        StateHasChanged();
+    }
+
+    async Task FilterTable()
+    {
+        if (Filter.SelectedCategory is null)
+        {
+            Filter.SelectedCategory = new()
+                {
+                    catId = 0
+                };
+        }
+        if (Filter.SelectedAuthor is null)
+        {
+            Filter.SelectedAuthor = new()
+                {
+                    AuthorID = 0,
+                    AuthorName = ""
+                };
+        }
+        if (Filter.Name is null)
+        {
+            Filter.Name = "";
+        }
+        IsLoading = true;
+        StateHasChanged();
+        await LoadData(Filter.FromDate, Filter.ToDate, 1, Filter?.Name, Filter?.SelectedAuthor.AuthorName, Filter.SelectedCategory.catId);
+        IsLoading = false;
+        StateHasChanged();
+    }
+
+
+    private async Task<IEnumerable<CategoryDTO>> GetCategories(string searchText)
+    {
+        (categoryDTOs, _) = await _categoryRepository.GetAllCategories(1, searchText);
+        return categoryDTOs;
+    }
+
+    private async Task<IEnumerable<AuthorDTO>> GetAuthors(string searchText)
+    {
+        (authorsDTO, _) = await _authorRepository.GetAllAuthors(1, searchText);
+        return authorsDTO;
+    }
+
+    async Task NavigateToIndex()
+    {
+        Filter = new BookFilterViewModel()
+            {
+                FromDate = DateTime.MinValue,
+                ToDate = DateTime.Now,
+                SelectedAuthor = new()
+                {
+                    AuthorID = 0,
+                    AuthorName = ""
+                },
+                SelectedCategory = new()
+                {
+                    catId = 0,
+                    CatTitle = "",
+                }
+
+            };
+        _navigationManager.NavigateTo($"/Books/Index/1");
+        await LoadData(Filter.FromDate, Filter.ToDate, 1, Filter?.Name, Filter?.SelectedAuthor.AuthorName, Filter.SelectedCategory.catId);
+    }
+
+
+    private async Task ShowDeleteModal(int bookId)
+    {
+        var options = new ModalOptions()
+            {
+                Position = ModalPosition.Center,
+                HideCloseButton = false,
+                Animation = ModalAnimation.FadeInOut(0.3),
+                ContentScrollable = true
+            };
+
+        ModalParameters parameters = new ModalParameters();
+        parameters.Add("bookId", bookId);
+
+
+        var DeleteModal = Modal.Show<_BookDelete>("Delete Book ?", parameters, options);
+        var result = await DeleteModal.Result;
+
+        if (!result.Cancelled)
+        {
+            await LoadData(DateTime.MinValue, DateTime.MaxValue, pageid);
+        }
+    }
+
+}

@@ -1,0 +1,141 @@
+﻿@page "/Cart/Index"
+@inject ICartRepository _cartRepository
+@inject IBookRepository _bookRepository
+@inject ICategoryRepository _categoryRepository
+@inject ILocalStorageService _localStorage
+@inject NavigationManager _navigationManager
+@inject IJSRuntime _jsRuntime
+@inject IHashids _hashId
+
+
+
+
+<div class="container px-3 my-5 clearfix">
+    <!-- Shopping cart table -->
+    <div class="card">
+        <div class="card-header">
+            <h2>Shopping Cart</h2>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                @if (CartDTO is not null && CartDTO.CartDetails.Any())
+                {
+                    <table class="table table-bordered m-0">
+                        <thead>
+                            <tr>
+                                <!-- Set columns width -->
+                                <th class="text-center py-3 px-4" style="min-width: 400px;">Product Name</th>
+                                <th class="text-right py-3 px-4" style="width: 100px;">Price</th>
+                                <th class="text-center align-middle py-3 px-0" style="width: 40px;"><a href="#" class="shop-tooltip float-none text-light" title="" data-original-title="Clear cart"><i class="ino ion-md-trash"></i></a></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var cartDetail in CartDTO.CartDetails)
+                            {
+
+                                <tr>
+                                    <td class="p-4">
+                                        <div class="media align-items-center">
+                                            <img src="@cartDetail.Book.Image" class="d-block ui-bordered mr-4" alt="" style="width:80px;">
+                                            <div class="media-body">
+                                                <a href="/Books/BookDetials/@_hashId.Encode(cartDetail.Book.BookId)" class="d-block text-dark">@cartDetail.Book.Title</a>
+                                                <small>
+                                                    <span class="text-muted">ISBN:</span>
+                                                    <span class="ui-product-color ui-product-color-sm align-text-bottom" style="background:#e81e2c;"></span> @cartDetail.Book.ISBN &nbsp;
+                                                    <span class="text-muted">Published Date: </span> @cartDetail.Book.PublishedYear.ToGregorian() &nbsp;
+                                                </small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="text-right font-weight-semibold align-middle p-4"> @cartDetail.Price.ToString("C")</td>
+                                    <td class="text-center align-middle px-0"><a @onclick="()=>DeleteCartDetail(CartDTO.CartId,cartDetail.DetailId)" class="shop-tooltip close float-none text-danger" title="" data-original-title="Remove">×</a></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+                else
+                {
+                    <div class="center-text">
+                        <h2>NO Data</h2>
+                    </div>
+                }
+            </div>
+            <!-- / Shopping cart table -->
+            @if (CartDTO is not null && CartDTO.CartDetails.Any())
+            {
+                <div class="d-flex flex-wrap justify-content-between align-items-center pb-4">
+                    <div class="d-flex">
+
+                        <div class="text-right mt-4">
+                            <label class="text-muted font-weight-normal m-0">Total price</label>
+                            <div class="text-large">
+                                <strong>@CartDTO.CartSum.ToString("C")</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="float-right">
+                    <button type="button" class="btn btn-lg btn-default md-btn-flat mt-2 mr-3">Back to shopping</button>
+                    <a href="Cart/Checkout" class="btn btn-lg btn-primary mt-2">Checkout</a>
+                </div>
+
+            }
+        </div>
+    </div>
+</div>
+
+
+
+
+@code {
+    public CartDTO? CartDTO { get; set; } = new();
+
+    public UserDTO UserDTO { get; set; } = new();
+
+    public string Token { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        UserDTO = await _localStorage.GetItemAsync<UserDTO>(SD.Local_UserDetails);
+        Token = await _localStorage.GetItemAsync<string>(SD.Local_Token);
+        if (UserDTO is null || Token is null)
+        {
+            _navigationManager.NavigateTo("/Account/Login");
+            return;
+        }
+
+        CartDTO = await _cartRepository.GetUserCart(SD.CartApiPath, "GetUserCart", UserDTO.Id, Token);
+
+    }
+
+    private async Task DeleteCartDetail(int cartId, int cartDetailId)
+    {
+        var IsDeleted = await _cartRepository.DeleteFromCart(SD.CartApiPath, cartId, cartDetailId, Token);
+
+        if (IsDeleted)
+        {
+            await _jsRuntime.ToastrSuccess("Deleted Successfuly");
+            CartDTO = await _cartRepository.GetUserCart(SD.CartApiPath, "GetUserCart", UserDTO.Id, Token);
+            StateHasChanged();
+        }
+        else
+        {
+            await _jsRuntime.ToastrError("Something Went Wrong");
+        }
+    }
+
+    private void NavigateToCheckout()
+    {
+        _navigationManager.NavigateTo("/Cart/Checkout");
+        return;
+    }
+
+    private void ReLoadThePage()
+    {
+        _navigationManager.NavigateTo("/Cart/Index");
+        return;
+    }
+
+}

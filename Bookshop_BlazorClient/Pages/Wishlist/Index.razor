@@ -1,0 +1,138 @@
+﻿@page "/WishList/Index/{PageId:int}"
+@inject IWishlistRepository _wishlistRepository
+@inject IBookRepository _bookRepository
+@inject ILocalStorageService _localStorage
+@inject IJSRuntime _jsRuntime
+@inject IHashids _hashId
+@attribute [Authorize(Roles = SD.Role_Customer)]
+
+
+
+<div class="container mt-5 mb-5">
+    <div class="col-md-12">
+        @if (WishlistsDTO is not null && WishlistsDTO.Any())
+        {
+            <table class="table table-hover table-bordered">
+                <thead class="thead-light">
+                    <tr>
+                        <th scope="col">Image</th>
+                        <th scope="col">Title</th>
+                        <th scope="col">Price</th>
+                        <th scope="col">Actions</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+
+                    @foreach (var wishlist in WishlistsDTO)
+                    {
+                    <tr>
+                        <th scope="row">
+                            <img class="u-img-fluid" style="max-height:120px;" src="@wishlist.Image" alt="@wishlist.BookTitle">
+                        </th>
+                        <td>@wishlist.BookTitle</td>
+                        @if (wishlist.IsDiscounted)
+                        {
+
+                            <td class="product-o__price">
+
+                                @wishlist.DiscountedPrice.ToString("C")
+
+                                <span class="product-o__discount">@wishlist.Price.ToString("C")</span>
+                            </td>
+                        }
+                        else
+                        {
+                            <td class="product-o__price">
+                                @wishlist.Price.ToString("C")
+                            </td>
+                        }
+                        <td class="text-center">
+                            <a class="btn btn-outline-success" data-modal="modal" data-modal-id="#add-to-cart">ADD TO CART</a>
+
+                            <a class="btn btn-outline-dark" href="/Books/BookDetails/@_hashId.Encode(wishlist.BookId)">VIEW</a>
+
+                            <a class="btn btn-outline-danger" @onclick="()=>DeleteWishlist(wishlist.WishlistId)">REMOVE</a>
+                        </td>
+                    </tr>
+                    }
+
+                </tbody>
+            </table>
+        }
+        else
+        {
+            <div class="center-text mb-5 mt-5">
+                <div class="w-r__container">
+                    <div class="w-r__wrap-1">
+                        <h2>No Data</h2>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+
+@code {
+    [Parameter]
+    public int PageId { get; set; }
+
+    public IEnumerable<WishlistDTO> WishlistsDTO { get; set; } = new List<WishlistDTO>();
+
+    public UserDTO User { get; set; } = new();
+
+    //public IEnumerable<WishlistBookViewModel> WishlistBooksViewModel { get; set; } = new List<WishlistBookViewModel>();
+
+    public string Token { get; set; }
+
+    //public DiscountDTO? discount { get; set; } = new();
+
+    public int PageCount { get; set; }
+
+    [CascadingParameter]
+    public Task<AuthenticationState> AuthenticationState { get; set; }
+
+    private async Task LoadData(string userId, string token, int pageId = 1)
+    {
+        (WishlistsDTO, PageCount) = await _wishlistRepository.GetAllUserWishlists(SD.WishlistApiPath, userId, token, PageId);
+        //WishlistBooksViewModel = await _bookRepository.GetBooksForWishlist(SD.BooksApiPath, userId, Token);
+    }
+
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (await _localStorage.GetItemAsync<string>(SD.Local_Token) is not null)
+        {
+            Token = await _localStorage.GetItemAsync<string>(SD.Local_Token);
+            User = await _localStorage.GetItemAsync<UserDTO>(SD.Local_UserDetails);
+        }
+
+        await LoadData(User.Id, Token, PageId);
+    }
+
+
+
+
+
+    private async Task DeleteWishlist(int wishlistId)
+    {
+        var IsDeleted = await _wishlistRepository.DeleteAsync(SD.WishlistApiPath, wishlistId, Token);
+        if (IsDeleted)
+        {
+            await _jsRuntime.ToastrSuccess("Deleted Successfuly");
+            await LoadData(User.Id, Token, PageId);
+            return;
+        }
+        else
+        {
+            await _jsRuntime.ToastrError("Something Went Wrong");
+            //StateHasChanged();
+            return;
+        }
+    }
+
+
+}

@@ -1,0 +1,388 @@
+﻿@page "/Books/BookDetails/{BookId}"
+@inject IBookRepository _bookRepository
+@inject IGalleryRepository _galleryRepository
+@inject IJSRuntime _jsRuntime
+@inject IDiscountRepository _discountRepository
+@inject IBookCoverFormatRepository _bookCoverFormatRepository
+@inject IPublisherRepository _publisherRepository
+@inject ITranslatorRepository _translatorRepository
+@inject NavigationManager _navigationManager
+@inject ILocalStorageService _localStorage
+@inject IWishlistRepository _wishlistRepository
+@inject ICartRepository _CartRepository
+@inject IHashids _hashId
+
+
+@if (BookDTO is not null)
+{
+
+    <section class="product-details spad">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-6 col-md-6">
+                    <ul class="pgwSlideshow">
+                        <li><img src="@BookDTO.Image" alt="@BookDTO.Title"></li>
+                        @if (galleriesDTO is not null && galleriesDTO.Any())
+                        {
+                            foreach (var gallery in galleriesDTO)
+                            {
+
+                                <li><img src="@gallery.Image" alt="@gallery.Title"></li>
+                            }
+                        }
+                    </ul>
+                </div>
+                <div class="col-lg-6 col-md-6">
+                    <div class="product__details__text">
+                        <h3>@BookDTO.Title</h3>
+                        <div class="product__details__rating">
+                            <i class="fa fa-star"></i>
+                            <i class="fa fa-star"></i>
+                            <i class="fa fa-star"></i>
+                            <i class="fa fa-star"></i>
+                            <i class="fa fa-star-half-o"></i>
+                            <span>(18 reviews)</span>
+                        </div>
+                        <div class="product__details__price">
+                            @if (discount is not null)
+                            {
+                                <h5>
+                                    @{
+                                        var discountPrice = DiscountCalculator.CalculateDiscount(BookDTO.Price, discount.DiscountPercent);
+                                    }
+
+                                    @discountPrice.ToString("C")
+                                </h5>
+
+                                <h5><s>@BookDTO.Price.ToString("C")</s></h5>
+                            }
+                            else
+                            {
+                                <h5>
+                                    @BookDTO.Price.ToString("C")
+                                </h5>
+                            }
+                        </div>
+                        <p>
+                            @((MarkupString)BookDTO.Description)
+                        </p>
+
+                            <div class="alert alert-info col-md-3">
+                                <p>Books Left : @BookDTO.Quantity</p>
+                            </div>
+                        @if (BookDTO.Quantity >= 1 || UserDTO is not null)
+                        {
+                            <button @onclick="()=>AddToCart(BookDTO.BookId,UserDTO.Id)" class="primary-btn">Add to Cart</button>
+                        }
+                        else
+                        {
+                            <button class="primary-btn" type="submit" disabled>Add to Cart</button>
+                        }
+                    </div>
+                </div>
+                <div class="col-lg-12">
+                    <div class="product__details__tab">
+                        <ul class="nav nav-tabs" role="tablist">
+                            <li class="nav-item">
+                                <a class="nav-link active" data-toggle="tab" href="#tabs-1" role="tab" aria-selected="true">Description</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" data-toggle="tab" href="#tabs-2" role="tab" aria-selected="false">Information</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" data-toggle="tab" href="#tabs-3" role="tab" aria-selected="false">Reviews <span>(1)</span></a>
+                            </li>
+                        </ul>
+                        <div class="tab-content">
+                            <div class="tab-pane active" id="tabs-1" role="tabpanel">
+                                <div class="product__details__tab__desc">
+                                    <h6>Products Infomation</h6>
+                                    <div class="tab-pane fade active show" id="pd-desc">
+                                        <div class="pd-tab__desc">
+
+                                            <div class="u-s-m-b-15">
+                                            </div>
+                                            <div class="u-s-m-b-15">
+                                                <div class="">
+                                                    <table class="table table-bordered table-hover">
+                                                        <tbody>
+                                                            <tr>
+                                                                <td>Author</td>
+                                                                <td>@AuthorName</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td>ISBN</td>
+                                                                <td>@BookDTO.ISBN</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td>Book Cover Format</td>
+                                                                <td>@BookCoverFormat.CoverFormatTitle</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td>Publisher</td>
+                                                                <td>@Publisher.PublisherTitle</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td>Published Year</td>
+                                                                <td>@BookDTO.PublishedYear.Year</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td>Quantity</td>
+                                                                <td>@BookDTO.Quantity In Stock</td>
+                                                            </tr>
+                                                            @if (Translator?.TranslatorName is not null)
+                                                            {
+                                                                <tr>
+                                                                    <td>Translator</td>
+                                                                    <td>@Translator?.TranslatorName</td>
+                                                                </tr>
+                                                            }
+
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="tab-pane" id="tabs-2" role="tabpanel">
+                                <div class="product__details__tab__desc">
+                                    <h6>Author Infomation</h6>
+                                    <p>
+                                        Vestibulum ac diam sit amet quam vehicula elementum sed sit amet dui.
+                                        Pellentesque in ipsum id orci porta dapibus. Proin eget tortor risus.
+                                        Vivamus suscipit tortor eget felis porttitor volutpat. Vestibulum ac diam
+                                        sit amet quam vehicula elementum sed sit amet dui. Donec rutrum congue leo
+                                        eget malesuada. Vivamus suscipit tortor eget felis porttitor volutpat.
+                                        Curabitur arcu erat, accumsan id imperdiet et, porttitor at sem. Praesent
+                                        sapien massa, convallis a pellentesque nec, egestas non nisi. Vestibulum ac
+                                        diam sit amet quam vehicula elementum sed sit amet dui. Vestibulum ante
+                                        ipsum primis in faucibus orci luctus et ultrices posuere cubilia Curae;
+                                        Donec velit neque, auctor sit amet aliquam vel, ullamcorper sit amet ligula.
+                                        Proin eget tortor risus.
+                                    </p>
+                                    <p>
+                                        Praesent sapien massa, convallis a pellentesque nec, egestas non nisi. Lorem
+                                        ipsum dolor sit amet, consectetur adipiscing elit. Mauris blandit aliquet
+                                        elit, eget tincidunt nibh pulvinar a. Cras ultricies ligula sed magna dictum
+                                        porta. Cras ultricies ligula sed magna dictum porta. Sed porttitor lectus
+                                        nibh. Mauris blandit aliquet elit, eget tincidunt nibh pulvinar a.
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="tab-pane" id="tabs-3" role="tabpanel">
+                                <div class="product__details__tab__desc">
+                                    <h6>Products Infomation</h6>
+                                    <p>
+                                        Vestibulum ac diam sit amet quam vehicula elementum sed sit amet dui.
+                                        Pellentesque in ipsum id orci porta dapibus. Proin eget tortor risus.
+                                        Vivamus suscipit tortor eget felis porttitor volutpat. Vestibulum ac diam
+                                        sit amet quam vehicula elementum sed sit amet dui. Donec rutrum congue leo
+                                        eget malesuada. Vivamus suscipit tortor eget felis porttitor volutpat.
+                                        Curabitur arcu erat, accumsan id imperdiet et, porttitor at sem. Praesent
+                                        sapien massa, convallis a pellentesque nec, egestas non nisi. Vestibulum ac
+                                        diam sit amet quam vehicula elementum sed sit amet dui. Vestibulum ante
+                                        ipsum primis in faucibus orci luctus et ultrices posuere cubilia Curae;
+                                        Donec velit neque, auctor sit amet aliquam vel, ullamcorper sit amet ligula.
+                                        Proin eget tortor risus.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!--====== End - Section Intro ======-->
+    <!--====== Section Content ======-->
+    <section class="related-product">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-12">
+                    <div class="section-title related__product__title">
+                        <h2>Authors Other Books</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                @if (AuthorBooksDTO.Any())
+                {
+                    @foreach (var authorsBook in AuthorBooksDTO)
+                    {
+                        if (authorsBook.BookId == BookDTO.BookId)
+                        {
+                            continue;
+                        }
+                        <BookComponent book="authorsBook"></BookComponent>
+                    }
+                }
+                else
+                {
+                    <div class="center-text">
+                        <h2>No Data</h2>
+                    </div>
+                }
+            </div>
+        </div>
+
+    </section>
+
+    <!--====== End - Section Content ======-->
+}
+else
+{
+    if (IsBookLoading)
+    {
+        <div class="center-loading">
+            <img src="/img/loading.gif" height="200" width="200">
+        </div>
+
+    }
+    else
+    {
+        <div class="alert alert-danger text-center">
+            <h2>Something Went Wrong</h2>
+        </div>
+    }
+}
+@code {
+
+    [Parameter]
+    public string BookId { get; set; }
+
+    public int DecodedBookId { get; set; }
+
+    public BookDTO BookDTO { get; set; } = new();
+
+    public IEnumerable<BookDTO> AuthorBooksDTO { get; set; } = new List<BookDTO>();
+
+    public DiscountDTO discount { get; set; } = new();
+
+    public PublisherDTO Publisher { get; set; } = new();
+
+    public TranslatorDTO? Translator { get; set; } = new();
+
+    public string AuthorName { get; set; }
+
+    public BookCoverFormatDTO BookCoverFormat { get; set; } = new();
+
+    public IEnumerable<GalleryDTO>? galleriesDTO { get; set; } = new List<GalleryDTO>();
+
+    public bool IsBookLoading { get; set; } = true;
+
+    public int ActivatedGalleryId { get; set; }
+
+    [CascadingParameter]
+    public Task<AuthenticationState> AuthenticationState { get; set; }
+
+    public UserDTO? UserDTO { get; set; } = new();
+
+    public string Token { get; set; }
+
+
+    private async Task LoadData(int bookId)
+    {
+        BookDTO = await _bookRepository.GetAsync(SD.BooksApiPath, bookId);
+        galleriesDTO = await _galleryRepository.GetAllGalleriesByBookId(SD.GalleryApiPath, "GetAllGalleriesByBookId", BookDTO.BookId);
+        discount = await _discountRepository.GetBookDiscount(SD.DiscountApiPath, "GetBookDiscount", BookDTO.BookId);
+        BookCoverFormat = await _bookCoverFormatRepository.GetAsync(SD.BookCoverFormatsApiPath, BookDTO.CoverFormatId);
+        Publisher = await _publisherRepository.GetAsync(SD.PubnlishersApiPath, BookDTO.PublisherId);
+        if (BookDTO.TranslatorId > 0)
+        {
+            Translator = await _translatorRepository.GetAsync(SD.TranslatorsApiPath, BookDTO.TranslatorId.Value);
+        }
+        AuthorBooksDTO = await _bookRepository.GetBooksByAuthorId(SD.BooksApiPath, "GetBooksByAuthorId", BookDTO.AuthorId);
+        AuthorName = await _bookRepository.GetbookAuthorName(SD.BooksApiPath, "GetbookAuthorName", BookDTO.BookId);
+    }
+
+
+    protected override async Task OnInitializedAsync()
+    {
+
+        DecodedBookId = _hashId.Decode(BookId)[0];
+        (Token, UserDTO) = await GetDataFromLocalStorage();
+        IsBookLoading = true;
+        StateHasChanged();
+        await LoadData(DecodedBookId);
+        IsBookLoading = false;
+        StateHasChanged();
+        await _jsRuntime.StartProductSlider();
+    }
+
+    private async Task<Tuple<string, UserDTO>> GetDataFromLocalStorage()
+    {
+        var user = new UserDTO();
+        string? Token = "";
+        if (await _localStorage.GetItemAsync<string>(SD.Local_Token) is not null)
+        {
+            user = await _localStorage.GetItemAsync<UserDTO>(SD.Local_UserDetails);
+            Token = await _localStorage.GetItemAsync<string>(SD.Local_Token);
+        }
+        else
+        {
+            var authenticationState = await AuthenticationState;
+            if (!authenticationState.User.Identity.IsAuthenticated)
+            {
+                await _jsRuntime.ToastrError("You Need To Login");
+                _navigationManager.NavigateTo("/Account/Login");
+                return null;
+
+            }
+        }
+        var tuple = Tuple.Create(Token, user);
+        return tuple;
+    }
+
+    private async Task AddToWishlist()
+    {
+
+        (Token, UserDTO) = await GetDataFromLocalStorage();
+
+        var wishlist = new WishlistDTO()
+            {
+                BookId = BookDTO.BookId,
+                BookTitle = BookDTO.Title,
+                IsDiscounted = (discount?.IsExpired == false ? true : false),
+                DiscountedPrice = (discount?.IsExpired == false ? DiscountCalculator.CalculateDiscount(BookDTO.Price, discount.DiscountPercent) : 0),
+                Image = BookDTO.Image,
+                Price = BookDTO.Price,
+                UserId = UserDTO.Id,
+                CreateDate = DateTime.Now
+            };
+
+        var IsCreated = await _wishlistRepository.CreateAsync(SD.WishlistApiPath, wishlist, Token);
+        if (IsCreated)
+        {
+            await _jsRuntime.ToastrSuccess("Added To Your Wishlist");
+        }
+        else
+        {
+            await _jsRuntime.ToastrError("Something Went Wrong");
+        }
+    }
+
+    private async Task AddToCart(int bookId, string userId)
+    {
+        (Token, UserDTO) = await GetDataFromLocalStorage();
+
+        if (UserDTO.Id != userId && bookId != BookDTO.BookId)
+        {
+            await _jsRuntime.ToastrError("Something Went Wrong");
+            return;
+        }
+
+        var IsAdded = await _CartRepository.AddToCart(SD.CartApiPath, "AddToCart", bookId, userId, Token);
+
+        if (IsAdded)
+        {
+            await _jsRuntime.Swal("success", "Success", "Added Successfuly");
+        }
+        else
+        {
+            await _jsRuntime.ToastrError("Something Went Wrong During The Operation");
+        }
+    }
+
+}

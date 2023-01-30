@@ -1,0 +1,89 @@
+﻿@inject ISliderRepository _sliderRepository
+@*@inject IJSRuntime _jsRuntime*@
+
+
+<div id="carouselExampleIndicators" class="carousel slide" data-ride="carousel">
+
+    @if (sliders is not null && sliders.Count() > 1)
+    {
+        <ol class="carousel-indicators">
+
+            @for (int i = 0; i < sliders.Count(); i++)
+            {
+                <li data-target="#carouselExampleIndicators" data-slide-to="@i">
+                </li>
+                
+            }
+        </ol>
+    }
+    <div class="carousel-inner">
+        @{
+            bool IsFirstIteration = true;
+        }
+        @if (sliders is not null && sliders.Any())
+        {
+            @foreach (var slider in sliders)
+            {
+                <div class="carousel-item @(IsFirstIteration ?"active" : null)">
+                    <a href="@slider.Url"><img class="d-block w-100" height="415" src="@slider.Image" alt="@slider.SliderTitle"></a>
+                    <div class="carousel-caption d-none d-md-block">
+                        <h5> @slider.SliderTitle </h5>
+                        <p>@((MarkupString)slider.ShortDesc)</p>
+                    </div>
+                </div>
+                @(IsFirstIteration = false)
+
+            }
+        }
+        else
+        {
+            <div class="carousel-item active">
+                <img class="d-block w-100"  height="415" src="/img/banner/library-book-bookshelf-read.jpg" alt="First slide">
+                <div class="carousel-caption d-none d-md-block">
+                    <h5>...</h5>
+                    <p>...</p>
+                </div>
+            </div>
+             
+        }
+    </div>
+    @if (sliders is not null && sliders.Count() > 1)
+    {
+        <a class="carousel-control-prev" href="#carouselExampleIndicators" role="button" data-slide="prev">
+            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+            <span class="sr-only">Previous</span>
+        </a>
+        <a class="carousel-control-next" href="#carouselExampleIndicators" role="button" data-slide="next">
+            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+            <span class="sr-only">Next</span>
+        </a>
+    }
+</div>
+
+
+@code {
+
+    public IEnumerable<SlidersDTO> sliders { get; set; } = new List<SlidersDTO>();
+
+
+
+    private async Task LoadData()
+    {
+        sliders = await _sliderRepository.GetAllAsync(SD.SlidersApiPath);
+    }
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        //var _jsModule = await _jsRuntime.InvokeAsync<IJSObjectReference>("import", "/js/app.js");
+        await LoadData();
+    }
+
+    //protected override async Task OnAfterRenderAsync(bool firstRender)
+    //{
+    //    await LoadData();
+    //}
+
+
+
+}

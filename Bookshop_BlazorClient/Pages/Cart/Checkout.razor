@@ -1,0 +1,215 @@
+﻿@page "/Cart/Checkout"
+@inject ICartRepository _cartRepository
+@inject IAddressRepository _addressRepository
+@inject ICategoryRepository _categoryRepository
+@inject IStripePaymentRepository _stripePaymentRepository
+@inject ILocalStorageService _localStorage
+@inject NavigationManager _navigationManager
+@inject IJSRuntime _jsRuntime
+@inject IHashids _hashId
+
+
+
+
+
+<!--====== Section 2 ======-->
+<!--====== End - Section 2 ======-->
+<!--====== Section 3 ======-->
+<div class="container">
+
+    <!--====== Section Content ======-->
+    <div class="section__content">
+        <div class="container">
+            <div class="checkout-f">
+                <div class="row">
+                    <div class="col-lg-6">
+                        <h3 class="checkout-f__h1">DELIVERY INFORMATION</h3>
+                        <table class="table table-hover table-bordered">
+                            @if (AddressDTO is not null)
+                            {
+
+                                <thead class="o-summary__box">
+                                    <tr>
+                                        <td>Address</td>
+                                        <td>Town</td>
+                                        <td>Phone</td>
+                                        <td>Zipcode</td>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>@AddressDTO.AddressTitle</td>
+                                        <td>@AddressDTO.Town</td>
+                                        <td>@AddressDTO.PhoneNo</td>
+                                        <td>@AddressDTO.Zipcode</td>
+                                        <td><a class="link-info" href="/Dashboard/Addresses">Edit</a></td>
+                                    </tr>
+                                </tbody>
+                            }
+                            else
+                            {
+                                <div class="o-summary__box">
+                                    <h2 class="checkout-f__h1">Address Not Found</h2>
+                                    <h3 class="checkout-f__h1">Create Or Select From <a href="/Dashboard/Addresses">Here</a></h3>
+
+
+                                </div>
+                            }
+                        </table>
+                    </div>
+                    <div class="col-lg-6">
+                        <h3 class="checkout-f__h1">ORDER SUMMARY</h3>
+
+                        <!--====== Order Summary ======-->
+                        <div class="o-summary">
+                            <table class="table table-hover table-bordered">
+
+                                @if (CartDTO is not null && CartDTO.CartDetails is not null && CartDTO.CartDetails.Any())
+                                {
+                                    <thead>
+                                        <tr>
+                                            <td>Book Image</td>
+                                            <td>Book Title</td>
+                                            <td>Book Price</td>
+                                            <td>Actions</td>
+                                        </tr>
+                                    </thead>
+
+                                    <tbody>
+                                        @foreach (var detail in CartDTO.CartDetails)
+                                        {
+                                            <tr>
+                                                <td><img style="width:80px;" src="@detail.Book.Image" alt="@detail.Book.Title"></td>
+                                                <td><a href="/Books/BookDetails/@_hashId.Encode(detail.BookId)">@detail.Book.Title</a></td>
+                                                <td>@detail.Book.Price.ToString("C")</td>
+                                                <td>
+                                                    <a class="btn btn-outline-danger btn-sm" @onclick="()=>DeleteCartDetail(CartDTO.CartId,detail.DetailId)">
+                                                        <i class="fa fa-trash"></i>
+                                                    </a>
+                                                </td>
+                                            </tr>
+
+                                        }
+                                    </tbody>
+                                }
+                                else
+                                {
+                                    <div class="center-text">
+                                        <div class="o-card__flex">
+                                            <h2>No Data</h2>
+                                        </div>
+                                    </div>
+                                }
+
+                            </table>
+
+                            <div class="col-md-12 mr-5">
+                                    <table class="table table-bordered">
+                                        <tbody>
+                                            <tr>
+                                                <td>GRAND TOTAL</td>
+                                                <td>@CartDTO.CartSum.ToString("C")</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                            </div>
+                            <div class="col-md-12 mb-5">
+                                    <div>
+
+                                        <button class="btn btn-outline-primary" type="submit" @onclick="HandleCheckout">PLACE ORDER</button>
+                                    </div>
+                              
+                            </div>
+                        </div>
+                        <!--====== End - Order Summary ======-->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!--====== End - Section Content ======-->
+</div>
+<!--====== End - Section 3 ======-->
+@code {
+    public CartDTO CartDTO { get; set; } = new();
+
+    public UserDTO UserDTO { get; set; } = new();
+
+    public AddressDTO AddressDTO { get; set; } = new();
+
+    public string Token { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        UserDTO = await _localStorage.GetItemAsync<UserDTO>(SD.Local_UserDetails);
+        Token = await _localStorage.GetItemAsync<string>(SD.Local_Token);
+        CartDTO = await _cartRepository.GetUserCart(SD.CartApiPath, "GetUserCart", UserDTO.Id, Token);
+        if (CartDTO is null)
+        {
+            _navigationManager.NavigateTo("/");
+            return;
+        }
+        AddressDTO = await _addressRepository.GetSelectedAddressByUserId(SD.AddressApiPath, "GetSelectedAddressByUserId", UserDTO.Id, Token);
+        if (UserDTO is null || Token is null)
+        {
+            _navigationManager.NavigateTo("/Account/Login");
+            return;
+        }
+
+
+    }
+
+    private async Task DeleteCartDetail(int cartId, int cartDetailId)
+    {
+        var IsDeleted = await _cartRepository.DeleteFromCart(SD.CartApiPath, cartId, cartDetailId, Token);
+
+        if (IsDeleted)
+        {
+            await _jsRuntime.Swal("success", "Success", "Deleted Successfuly");
+            CartDTO = await _cartRepository.GetUserCart(SD.CartApiPath, "GetUserCart", UserDTO.Id, Token);
+            return;
+        }
+        else
+        {
+            await _jsRuntime.ToastrError("Something Went Wrong");
+            return;
+        }
+    }
+
+    private async Task HandleCheckout()
+    {
+
+
+        try
+        {
+            var paymentDTO = new StripePaymentDTO()
+                {
+                    Amount = Convert.ToInt32(CartDTO.CartSum * 100),
+                    ProductName = "Book/Books",
+                    ReturnUrl = "/Cart/Checkout",
+                    //ImageUrl = CartDTO.CartDetails.FirstOrDefault().Book.Image
+                };
+
+            var result = await _stripePaymentRepository.Checkout(SD.StripeApiPath, "Create", paymentDTO, Token);
+
+            if (result.Data is null)
+            {
+                await _jsRuntime.Swal("error", "Erorr", "Something Went Wrong");
+                return;
+            }
+
+            await _localStorage.SetItemAsync<CartDTO>(SD.Local_Cart_data, CartDTO);
+            await _localStorage.SetItemAsync<string>(SD.Local_Stripe_Session_Id, result.Data.ToString());
+
+            await _jsRuntime.InvokeVoidAsync("redirectToCheckout", result.Data.ToString());
+
+
+        }
+        catch (Exception ex)
+        {
+            await _jsRuntime.ToastrError(ex.Message);
+        }
+
+    }
+
+}

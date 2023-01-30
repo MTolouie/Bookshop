@@ -1,0 +1,136 @@
+﻿@page "/Discounts/Edit/{Id}"
+@inject IJSRuntime _jsRuntime
+@inject IDiscountRepository _discountRepository
+@inject IBookRepository _bookRepository
+@inject NavigationManager _navigationManager
+@inject IHttpContextAccessor _httpContextAccessor
+@inject IHashids _hashId
+@attribute [Authorize(Roles = SD.Role_Admin)]
+
+<div class="container" style="margin-top:100px;margin-left:50px;margin-right:50px;">
+    <EditForm Model="DiscountDTO" OnValidSubmit="EditDiscount">
+        <DataAnnotationsValidator></DataAnnotationsValidator>
+        <div class="form-row">
+            <div class="form-group col-md-4">
+                <label for="Name">Book TItle</label>
+                <BlazoredTypeahead SearchMethod="GetBooks"
+                                   @bind-Value="SelectedBook"
+                                   placeholder="Search by Book Title..."
+                                   Context="bookContext"
+                                   ShowDropDownOnFocus=true>
+                    <SelectedTemplate>
+                        @bookContext.Title
+                    </SelectedTemplate>
+                    <ResultTemplate Context="book">
+                        @book.Title
+                    </ResultTemplate>
+                </BlazoredTypeahead>
+                <ValidationMessage style="color:red;margin-left:5px;" For="()=>DiscountDTO.BookId"></ValidationMessage>
+            </div>
+            <div class="form-group col-md-3 mr-3 ml-3">
+                <label for="AuthorImage">Discount Percentage</label>
+                <InputNumber class="form-control" @bind-Value="DiscountDTO.DiscountPercent"></InputNumber>
+                <ValidationMessage style="color:red;margin-left:5px;" For="()=>DiscountDTO.DiscountPercent"></ValidationMessage>
+            </div>
+            <div class="form-group col-md-3 mr-5">
+                <label for="AuthorImage">Start Date</label>
+                <InputDate class="form-control" @bind-Value="DiscountDTO.StartDate"></InputDate>
+                <ValidationMessage style="color:red;margin-left:5px;" For="()=>DiscountDTO.StartDate"></ValidationMessage>
+            </div>
+            <div class="form-group col-md-3 mr-5">
+                <label for="AuthorImage">End Date</label>
+                <InputDate class="form-control" @bind-Value="DiscountDTO.endDate"></InputDate>
+                <ValidationMessage style="color:red;margin-left:5px;" For="()=>DiscountDTO.endDate"></ValidationMessage>
+            </div>
+
+        </div>
+        <button type="submit" class="btn btn-outline-primary btn-block  mb-5">Edit Dsicount</button>
+    </EditForm>
+</div>
+
+@code {
+
+    [Parameter]
+    public string Id { get; set; }
+
+    public DiscountDTO DiscountDTO { get; set; } = new();
+
+    public List<BookDTO> BookDTOs { get; set; } = new();
+
+    public BookDTO SelectedBook { get; set; }
+
+
+    private async Task LoadData()
+    {
+        var decodedId = _hashId.Decode(Id)[0];
+        DiscountDTO = await _discountRepository.GetDiscountById(decodedId);
+        SelectedBook = await _bookRepository.GetBookById(DiscountDTO.BookId);
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task<IEnumerable<BookDTO>> GetBooks(string searchText)
+    {
+        (BookDTOs, _) = _bookRepository.GetAllBooks(DateTime.MinValue, DateTime.MinValue, 1, searchText);
+        return BookDTOs;
+    }
+
+    private async Task EditDiscount()
+    {
+
+        var IsValid = await InvalidForm();
+        if (!IsValid)
+        {
+
+            DiscountDTO.BookId = SelectedBook.BookId;
+            DiscountDTO.IsExpired = false;
+            var IsUpdated = await _discountRepository.UpdateDiscount(_hashId.Decode(Id)[0],DiscountDTO);
+            if (IsUpdated)
+            {
+                await _jsRuntime.ToastrSuccess($"Discount Updated Successfuly");
+                _navigationManager.NavigateTo("/Discounts/Index/1");
+            }
+            else
+            {
+                await _jsRuntime.ToastrError("Something Went Wrong");
+            }
+
+
+        }
+    }
+
+    async Task<bool> InvalidForm()
+    {
+
+        if (SelectedBook is null)
+        {
+            await _jsRuntime.ToastrError("Book cannot Be Null");
+            return true;
+        }
+
+        if (DiscountDTO.DiscountPercent == 0)
+        {
+            await _jsRuntime.ToastrError("percentage Cannot Be Null");
+            return true;
+        }
+
+        if (DiscountDTO.StartDate <= DateTime.Now.AddDays(-1))
+        {
+            await _jsRuntime.ToastrError("Start Date Cant Be In The Past");
+            return true;
+        }
+        if (DiscountDTO.endDate <= DateTime.Now.AddDays(-1))
+        {
+            await _jsRuntime.ToastrError("End Date Cant Be In The Past");
+            return true;
+        }
+
+
+        return false;
+    }
+
+}
+

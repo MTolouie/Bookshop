@@ -1,0 +1,171 @@
+﻿@page "/Books/Gallery/{Id}"
+@inject IGalleryRepository _galleryRepository
+@inject IBookRepository _bookRepository
+@inject IHashids _hashId
+@inject IJSRuntime _jsRuntime
+@inject IHttpContextAccessor _httpContextaccessor
+@inject IFileUpload _fileUpload
+@attribute [Authorize(Roles = SD.Role_Admin)]
+
+<h2 class="text-center" style="margin-top:80px;">Gallery</h2>
+<hr>
+<div class="container">
+
+    <div class="col-md-4 pull-left border-5">
+        @if (bookDTO is not null)
+        {
+            <div class="text-center">
+                <h2 class="text-center mb-3">@bookDTO.Title</h2>
+                <img class="img-thumbnail mb-3" src="@bookDTO.Image" height="200" width="100" />
+
+            </div>
+            <div class="">
+                Create Date : @bookDTO.CreatedDate.ToGregorian()<br>
+                Published Year : @bookDTO.PublishedYear.ToGregorian()<br>
+                Tags :
+                @if (bookDTO.Tags is not null)
+                {
+                    foreach (var tag in bookDTO.Tags.Split(','))
+                    {
+                        <span class="badge badge-primary ml-2">@tag</span>
+                    }
+                }
+            </div>
+        }
+    </div>
+    <div class="col-md-8 pull-right">
+        <a href="/Gallery/Create/@_hashId.Encode(bookDTO.BookId)" class="btn btn-outline-primary mb-2 btn-block">Create Gallery</a>
+        @if (galleryDTOs.Any())
+        {
+            foreach (var item in galleryDTOs)
+            {
+
+                <div class="col-md-3 pull-left" style="margin-left:32px;">
+                    <div class="card text-center" style="width:12rem;">
+                        <img class="card-img-top" src="@item.Image" alt="Card image cap" height="200" width="100">
+                        <div class="card-body">
+                            <h5 class="card-title">@item.Title</h5>
+                            <button class="btn btn-outline-danger" @onclick="()=>DeleteGallery(item.GalleryID)">Delete</button>
+                        </div>
+                    </div>
+                </div>
+
+            }
+        }
+        else
+        {
+            if (IsLoading)
+            {
+
+                <div class="text-center">
+                    <img src="/AdminLayout/images/loader.gif" height="200" width="200">
+                </div>
+
+
+            }
+            else
+            {
+
+                <div class="alert alert-danger text-center">
+                    <h2>No Data</h2>
+                </div>
+
+            }
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public string Id { get; set; }
+
+    public int bookId { get; set; }
+
+    public bool IsLoading { get; set; }
+
+    public List<GalleryDTO> galleryDTOs { get; set; } = new();
+
+    public BookDTO bookDTO { get; set; } = new();
+
+    [CascadingParameter]
+    public IModalService Modal { get; set; }
+
+    private async Task LoadData()
+    {
+        IsLoading = true;
+        StateHasChanged();
+        bookId = _hashId.Decode(Id)[0];
+        bookDTO = await _bookRepository.GetBookById(bookId);
+        galleryDTOs = await _galleryRepository.GetAllGalleriesByBookId(bookId);
+        IsLoading = false;
+        StateHasChanged();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+
+    private async Task DeleteGallery(int id)
+    {
+        var gallery = await _galleryRepository.GetGalleryById(id);
+
+        if (gallery is not null)
+        {
+
+            if(gallery.Image is not null)
+            {
+                var Url = _httpContextaccessor.GetGalleryImagePath();
+                var filename = gallery.Image.Replace(Url,null);
+                var state = await _fileUpload.DeleteFile(filename,SD.GalleryAvatar);
+                if (!state)
+                {
+                    await _jsRuntime.ToastrError("Could Not Delete The Image");
+                    return;
+                }
+            }
+
+            var IsDeleted = await _galleryRepository.DeleteGalleryById(id);
+            if (IsDeleted)
+            {
+                await _jsRuntime.ToastrSuccess($"{gallery.Title} Deleted Successfuly");
+                await LoadData();
+            }
+            else
+            {
+                await _jsRuntime.ToastrError("Could Not Delete The Gallery");
+            }
+        }
+        else
+        {
+            await _jsRuntime.ToastrError("Something Went Wrong");
+        }
+
+
+    }
+
+    //private async Task ShowCreateModal(int bookId)
+    //{
+    //     var options = new ModalOptions()
+    //        {
+    //            Position = ModalPosition.Center,
+    //            HideCloseButton = false,
+    //            Animation = ModalAnimation.FadeInOut(0.3),
+    //            ContentScrollable = true
+    //        };
+
+    //    ModalParameters parameters = new ModalParameters();
+    //    parameters.Add("bookId", bookId);
+
+
+    //    var CreateModal = Modal.Show<_GalleryCreate>("Create Gallery", parameters, options);
+    //    var result = await CreateModal.Result;
+
+    //    if (!result.Cancelled)
+    //    {
+    //        await LoadData();
+    //    }
+    //}
+
+}

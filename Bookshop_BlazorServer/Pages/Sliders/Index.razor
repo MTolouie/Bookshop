@@ -1,0 +1,209 @@
+﻿@page "/Sliders/Index/{pageid:int}"
+@inject IJSRuntime _jsRuntime
+@inject ISliderRepository _sliderRepository
+@inject NavigationManager _navigationManager
+@inject IHashids _hashId
+@inject IHttpContextAccessor _httpContextAccessor
+@attribute [Authorize(Roles = SD.Role_Admin)]
+<PageTitle>Sliders</PageTitle>
+
+
+<div class="col-mg-12" style="margin-left:15px;margin-right:15px;margin-top:100px;">
+    <a class="btn btn-outline-primary btn-block" href="/sliders/Create">Create</a>
+    <div class="card" style="margin-top:10px;">
+        <div class="card-body">
+            <h2 class="box-title text-center">Sliders</h2>
+            <EditForm Model="Filter" OnValidSubmit="FilterTable">
+                <div class="form-inline mt-4 ml-2">
+                    <div class="form-group">
+                        Name : &ensp; <InputText @bind-Value="Filter.SliderTitle" class="form-control" placeholder="Slider Title" style="max-width:200px;"></InputText>
+                    </div>
+                    <div class="form-group col-md-3">
+                        Start Date : &ensp; <InputDate  @bind-Value="Filter.FromDate"   class="form-control"></InputDate>
+                    </div>
+                    
+                    <div class="form-group col-md-3">
+                        End Date : &ensp; <InputDate @bind-Value="Filter.ToDate" class="form-control"></InputDate>
+                    </div>
+                    <a @onclick="NavigateToIndex" class="btn btn-outline-dark btn-block ml-5" style="max-width:90px;">
+                        <i class="fa fa-eraser"></i>
+                    </a>
+                    <button @onclick="FilterTable" class="btn btn-outline-success btn-block mb-2 ml-3 " style="max-width:90px;"><i class="fa fa-search"></i></button>
+                </div>
+            </EditForm>
+        </div>
+        <div class="card-body">
+            <div class="table-stats order-table ov-h">
+                @{
+                    int j = 1;
+                }
+
+
+                @if (SliderDTOs.Any())
+                {
+                    <table class="table ">
+                        <thead>
+                            <tr>
+                                <th class="serial">#</th>
+                                <th class="avatar">Slider</th>
+                                <th>Slider Title</th>
+                                <th>Start Date</th>
+                                <th>End Date</th>
+                                <th>Url</th>
+                                <th>Activity</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in SliderDTOs)
+                            {
+                                <tr>
+                                    <td class="serial">@(j++)</td>
+                                    <td class="avatar">
+                                        <div class="round-img">
+                                            <img class="img-thumbnail"  src="@item.Image" alt="@item.SliderTitle">
+                                        </div>
+                                    </td>
+
+                                    <td>
+                                        <span class="name">@item.SliderTitle</span>
+                                    </td>
+                                    <td>
+                                        <span class="name">@item.StartDate.ToGregorian()</span>
+                                    </td> 
+                                    <td>
+                                        <span class="name">@item.EndDate.ToGregorian()</span>
+                                    </td>
+                                    <td>
+                                        <span class="name"><a href="@item.Url">@item.Url</a></span>
+                                    </td>
+
+
+                                    <td class="col-md-3">
+                                        <button class="btn btn-outline-danger" @onclick="()=>ShowDeleteModal(item.SliderId)">Delete</button>
+                                        <a class="btn btn-outline-warning" href="/sliders/Edit/@_hashId.Encode(item.SliderId)">Edit</a>
+                                    </td>
+                                </tr>
+                            }
+
+                        </tbody>
+                    </table>
+                }
+
+
+
+                else
+                {
+                   
+                     <div class="alert alert-danger text-center">
+                            <h2>No Data</h2>
+                        </div>
+                 
+
+                }
+
+            </div>
+        </div> <!-- /.table-stats -->
+
+    </div> <!-- /.card -->
+    @if (PageCount > 0)
+    {
+        <ul class="pagination">
+            @for (int i = 1; i <= PageCount; i++)
+            {
+                <li class="page-item @(pageid == i ?"active" : "")"><a class="page-link mb-5" href="/sliders/Index/@i">@i</a></li>
+            }
+        </ul>
+    }
+</div>  <!-- /.col-lg-8 -->
+<!-- /.orders -->
+@code {
+
+    public List<SlidersDTO> SliderDTOs { get; set; } = new();
+
+    [Parameter]
+    public int pageid { get; set; } = 1;
+
+    public int PageCount { get; set; }
+
+    public SliderFilterViewModel Filter { get; set; } = new();
+
+    [CascadingParameter]
+    public IModalService Modal { get; set; }
+
+
+    private async Task LoadData(DateTime startDate, DateTime endDate, int pageId = 1, string sliderTitle = "")
+    {
+
+        (SliderDTOs, PageCount) = await _sliderRepository.GetAllSliders(startDate, endDate, pageId, sliderTitle);
+
+    }
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData(DateTime.MinValue, DateTime.MinValue);
+    }
+
+    //protected override async Task OnAfterRenderAsync(bool firstRender)
+    //{
+    //    if (firstRender)
+    //    {
+    //        await LoadData(DateTime.MinValue, DateTime.MinValue);
+    //    }
+    //}
+
+    async Task FilterTable()
+    {
+
+        if (Filter.SliderTitle is null)
+        {
+            Filter.SliderTitle = "";
+        }
+ 
+        await LoadData(Filter.FromDate, Filter.ToDate, 1, Filter?.SliderTitle);
+
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await LoadData(DateTime.MinValue, DateTime.MinValue, pageid);
+    }
+
+    async Task NavigateToIndex()
+    { 
+        Filter = new SliderFilterViewModel()
+            {
+                SliderTitle = ""
+            };
+        _navigationManager.NavigateTo($"/Sliders/Index/1");
+        await LoadData(DateTime.MinValue, DateTime.MinValue, pageid);
+    }
+
+
+    private async Task ShowDeleteModal(int sliderId)
+    {
+        var options = new ModalOptions()
+            {
+                Position = ModalPosition.Center,
+                HideCloseButton = false,
+                Animation = ModalAnimation.FadeInOut(0.3),
+                ContentScrollable = true
+            };
+
+        ModalParameters parameters = new ModalParameters();
+        parameters.Add("sliderId", sliderId);
+
+
+        var DeleteModal = Modal.Show<_SliderDelete>("Delete Slider ?", parameters, options);
+        var result = await DeleteModal.Result;
+
+        if (!result.Cancelled)
+        {
+             await LoadData(DateTime.MinValue, DateTime.MinValue, pageid);
+
+        }
+    }
+
+
+}
+

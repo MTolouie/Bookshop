@@ -1,0 +1,129 @@
+﻿@page "/Gallery/Create/{Id}"
+@inject IJSRuntime _jsRuntime
+@inject IGalleryRepository _galleryRepository
+@inject IFileUpload _fileUpload
+@inject IHttpContextAccessor _httpContextAccessor
+@inject NavigationManager _navigationManager
+@inject IHashids _hashId
+@attribute [Authorize(Roles = SD.Role_Admin)]
+
+<h2 class="text-center" style="margin-top:80px;">Create Gallery</h2>
+<hr>
+<div class="container" style="margin-top:40px;margin-left:450px;">
+    <EditForm Model="GalleryDTO" OnValidSubmit="CreateGallery">
+        <div class="form-row">
+            <div class="form-group col-md-6">
+                <label for="Name" class="text-center">Book Name</label>
+                <InputText @bind-Value="@GalleryDTO.Title" class="form-control" style="width:300px;" placeholder="Book Name"></InputText>
+                <ValidationMessage For="()=>GalleryDTO.Title"></ValidationMessage>
+                <label for="AuthorImage" class="text-center">Image</label>
+                 <InputFile OnChange="UploadImg" class="mt-5"></InputFile><br>
+                <img src="@(ChosenImage is not null ?ChosenImage:NoImagePath)" class="img-thumbnai mt-3" width="300" height="150">
+               
+                @if (ChosenImage is not null)
+                {
+                    <br>
+                    <a @onclick="DeleteImage" class="btn btn-outline-danger mt-3 ml-1" style="width:300px;">Delete Image</a>
+                }
+            </div>
+        </div>
+         <button type="submit" class="btn btn-outline-primary ml-1" style="width:300px;">Create Gallery</button>
+    </EditForm>
+</div>
+
+@code {
+    public GalleryDTO GalleryDTO { get; set; } = new();
+
+    public string ChosenImage { get; set; }
+
+    public string NoImagePath { get; set; }
+
+    [Parameter]
+    public string Id { get; set; }
+
+    public int bookId { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        NoImagePath = $"{_httpContextAccessor.GetBookImagePath()}No_Image.jpg";
+        bookId = _hashId.Decode(Id)[0];
+    }
+
+    private async Task UploadImg(InputFileChangeEventArgs e)
+    {
+        var fileInfo = new FileInfo(e.File.Name);
+        if (fileInfo.Extension == ".png" || fileInfo.Extension == ".jpg" || fileInfo.Extension == ".jpeg")
+        {
+            ChosenImage = await _fileUpload.UploadFile(e.File, SD.GalleryAvatar);
+        }
+        else
+        {
+            await _jsRuntime.ToastrError("Corrupt File");
+        }
+    }
+
+    private async Task DeleteImage()
+    {
+        var Url = _httpContextAccessor.GetGalleryImagePath();
+        string filename = ChosenImage.Replace(Url, null);
+        if (filename != "No_Image.jpg")
+        {
+            var IsDeleted = await _fileUpload.DeleteFile(filename, SD.GalleryAvatar);
+            if (IsDeleted)
+            {
+                await _jsRuntime.ToastrSuccess("Deleted Successfuly");
+                ChosenImage = null;
+
+            }
+            else
+            {
+                await _jsRuntime.ToastrError("Something Went Wrong");
+            }
+        }
+        else
+        {
+            await _jsRuntime.ToastrError("Coult Not Delete This File");
+            return;
+        }
+    }
+
+
+    private async Task CreateGallery()
+    {
+        var anyError = await InvalidSubmit();
+        if (anyError)
+            return;
+
+        GalleryDTO.Image = ChosenImage;
+        GalleryDTO.BookId = bookId;
+        var IsAdded = await _galleryRepository.AddGallery(GalleryDTO);
+        if (IsAdded)
+        {
+            await _jsRuntime.ToastrSuccess($"{GalleryDTO.Title} Added Successfuly");
+            _navigationManager.NavigateTo($"/books/Gallery/{Id}");
+        }
+        else
+        {
+            await _jsRuntime.ToastrError("Could Not add The Gallery");
+        }
+    }
+
+
+    private async Task<bool> InvalidSubmit()
+    {
+        if (GalleryDTO.Title is null)
+        {
+            await _jsRuntime.ToastrError("Title Is Required");
+            return true;
+        }
+        if (ChosenImage is null)
+        {
+            await _jsRuntime.ToastrError("Image Is Required");
+            return true;
+        }
+
+        return false;
+
+    }
+}
+

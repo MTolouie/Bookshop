@@ -1,0 +1,388 @@
+﻿@page "/"
+@*@attribute [Authorize(Roles = SD.Role_Admin)]*@
+@inject NavigationManager _navigationManager
+<PageTitle>Dashboard</PageTitle>
+
+<div class="content">
+    <!-- Animated -->
+    <div class="animated fadeIn">
+        <!-- Widgets  -->
+        <div class="row">
+            <div class="col-lg-3 col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="stat-widget-five">
+                            <div class="stat-icon dib flat-color-1">
+                                <i class="pe-7s-cash"></i>
+                            </div>
+                            <div class="stat-content">
+                                <div class="text-left dib">
+                                    <div class="stat-text">$<span class="count">23569</span></div>
+                                    <div class="stat-heading">Revenue</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-3 col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="stat-widget-five">
+                            <div class="stat-icon dib flat-color-2">
+                                <i class="pe-7s-cart"></i>
+                            </div>
+                            <div class="stat-content">
+                                <div class="text-left dib">
+                                    <div class="stat-text"><span class="count">3435</span></div>
+                                    <div class="stat-heading">Sales</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-3 col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="stat-widget-five">
+                            <div class="stat-icon dib flat-color-3">
+                                <i class="pe-7s-browser"></i>
+                            </div>
+                            <div class="stat-content">
+                                <div class="text-left dib">
+                                    <div class="stat-text"><span class="count">349</span></div>
+                                    <div class="stat-heading">Templates</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-3 col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="stat-widget-five">
+                            <div class="stat-icon dib flat-color-4">
+                                <i class="pe-7s-users"></i>
+                            </div>
+                            <div class="stat-content">
+                                <div class="text-left dib">
+                                    <div class="stat-text"><span class="count">2986</span></div>
+                                    <div class="stat-heading">Clients</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- /Widgets -->
+        <!--  Traffic  -->
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="card">
+                    <div class="card-body">
+                        <h4 class="box-title">Traffic </h4>
+                    </div>
+                    <div class="row">
+                        <div class="col-lg-8">
+                            <div class="card-body">
+                                <!-- <canvas id="TrafficChart"></canvas>   -->
+                                <div id="traffic-chart" class="traffic-chart"><svg xmlns:ct="http://gionkunz.github.com/chartist-js/ct" width="100%" height="100%" class="ct-chart-line" style="width: 100%; height: 100%;"><g class="ct-grids"><line x1="50" x2="50" y1="15" y2="300" class="ct-grid ct-horizontal"></line><line x1="197.35999755859376" x2="197.35999755859376" y1="15" y2="300" class="ct-grid ct-horizontal"></line><line x1="344.7199951171875" x2="344.7199951171875" y1="15" y2="300" class="ct-grid ct-horizontal"></line><line x1="492.0799926757813" x2="492.0799926757813" y1="15" y2="300" class="ct-grid ct-horizontal"></line><line x1="639.439990234375" x2="639.439990234375" y1="15" y2="300" class="ct-grid ct-horizontal"></line><line x1="786.7999877929688" x2="786.7999877929688" y1="15" y2="300" class="ct-grid ct-horizontal"></line><line y1="300" y2="300" x1="50" x2="786.7999877929688" class="ct-grid ct-vertical"></line><line y1="259.2857142857143" y2="259.2857142857143" x1="50" x2="786.7999877929688" class="ct-grid ct-vertical"></line><line y1="218.57142857142856" y2="218.57142857142856" x1="50" x2="786.7999877929688" class="ct-grid ct-vertical"></line><line y1="177.85714285714286" y2="177.85714285714286" x1="50" x2="786.7999877929688" class="ct-grid ct-vertical"></line><line y1="137.14285714285714" y2="137.14285714285714" x1="50" x2="786.7999877929688" class="ct-grid ct-vertical"></line><line y1="96.42857142857142" y2="96.42857142857142" x1="50" x2="786.7999877929688" class="ct-grid ct-vertical"></line><line y1="55.71428571428572" y2="55.71428571428572" x1="50" x2="786.7999877929688" class="ct-grid ct-vertical"></line><line y1="15" y2="15" x1="50" x2="786.7999877929688" class="ct-grid ct-vertical"></line></g><g><g class="ct-series ct-series-a"><path d="M50,300L50,300C99.12,251.143,148.24,200.89,197.36,153.429C246.48,105.967,295.6,15,344.72,15C393.84,15,442.96,83.901,492.08,96.429C541.2,108.956,590.32,106.526,639.44,120.857C688.56,135.189,737.68,240.286,786.8,300L786.8,300Z" class="ct-area"></path></g><g class="ct-series ct-series-b"><path d="M50,300L50,300C99.12,210.429,148.24,31.286,197.36,31.286C246.48,31.286,295.6,177.857,344.72,177.857C393.84,177.857,442.96,137.143,492.08,137.143C541.2,137.143,590.32,157.603,639.44,177.857C688.56,198.111,737.68,257.657,786.8,297.557L786.8,300Z" class="ct-area"></path></g><g class="ct-series ct-series-c"><path d="M50,300L50,300C99.12,259.286,148.24,215.663,197.36,177.857C246.48,140.051,295.6,72,344.72,72C393.84,72,442.96,177.857,492.08,177.857C541.2,177.857,590.32,55.714,639.44,55.714C688.56,55.714,737.68,191.429,786.8,259.286L786.8,300Z" class="ct-area"></path></g></g><g class="ct-labels"><foreignObject style="overflow: visible;" x="50" y="305" width="147.35999755859376" height="20"><span class="ct-label ct-horizontal ct-end" xmlns="http://www.w3.org/2000/xmlns/" style="width: 147px; height: 20px;">Jan</span></foreignObject><foreignObject style="overflow: visible;" x="197.35999755859376" y="305" width="147.35999755859376" height="20"><span class="ct-label ct-horizontal ct-end" xmlns="http://www.w3.org/2000/xmlns/" style="width: 147px; height: 20px;">Feb</span></foreignObject><foreignObject style="overflow: visible;" x="344.7199951171875" y="305" width="147.35999755859376" height="20"><span class="ct-label ct-horizontal ct-end" xmlns="http://www.w3.org/2000/xmlns/" style="width: 147px; height: 20px;">Mar</span></foreignObject><foreignObject style="overflow: visible;" x="492.0799926757813" y="305" width="147.35999755859376" height="20"><span class="ct-label ct-horizontal ct-end" xmlns="http://www.w3.org/2000/xmlns/" style="width: 147px; height: 20px;">Apr</span></foreignObject><foreignObject style="overflow: visible;" x="639.439990234375" y="305" width="147.3599975585937" height="20"><span class="ct-label ct-horizontal ct-end" xmlns="http://www.w3.org/2000/xmlns/" style="width: 147px; height: 20px;">May</span></foreignObject><foreignObject style="overflow: visible;" x="786.7999877929688" y="305" width="30" height="20"><span class="ct-label ct-horizontal ct-end" xmlns="http://www.w3.org/2000/xmlns/" style="width: 30px; height: 20px;">Jun</span></foreignObject><foreignObject style="overflow: visible;" y="259.2857142857143" x="10" height="40.714285714285715" width="30"><span class="ct-label ct-vertical ct-start" xmlns="http://www.w3.org/2000/xmlns/" style="height: 41px; width: 30px;">0</span></foreignObject><foreignObject style="overflow: visible;" y="218.57142857142856" x="10" height="40.714285714285715" width="30"><span class="ct-label ct-vertical ct-start" xmlns="http://www.w3.org/2000/xmlns/" style="height: 41px; width: 30px;">5000</span></foreignObject><foreignObject style="overflow: visible;" y="177.85714285714283" x="10" height="40.71428571428571" width="30"><span class="ct-label ct-vertical ct-start" xmlns="http://www.w3.org/2000/xmlns/" style="height: 41px; width: 30px;">10000</span></foreignObject><foreignObject style="overflow: visible;" y="137.14285714285714" x="10" height="40.71428571428572" width="30"><span class="ct-label ct-vertical ct-start" xmlns="http://www.w3.org/2000/xmlns/" style="height: 41px; width: 30px;">15000</span></foreignObject><foreignObject style="overflow: visible;" y="96.42857142857142" x="10" height="40.71428571428572" width="30"><span class="ct-label ct-vertical ct-start" xmlns="http://www.w3.org/2000/xmlns/" style="height: 41px; width: 30px;">20000</span></foreignObject><foreignObject style="overflow: visible;" y="55.71428571428572" x="10" height="40.714285714285694" width="30"><span class="ct-label ct-vertical ct-start" xmlns="http://www.w3.org/2000/xmlns/" style="height: 41px; width: 30px;">25000</span></foreignObject><foreignObject style="overflow: visible;" y="15" x="10" height="40.71428571428572" width="30"><span class="ct-label ct-vertical ct-start" xmlns="http://www.w3.org/2000/xmlns/" style="height: 41px; width: 30px;">30000</span></foreignObject><foreignObject style="overflow: visible;" y="-15" x="10" height="30" width="30"><span class="ct-label ct-vertical ct-start" xmlns="http://www.w3.org/2000/xmlns/" style="height: 30px; width: 30px;">35000</span></foreignObject></g></svg></div>
+                            </div>
+                        </div>
+                        <div class="col-lg-4">
+                            <div class="card-body">
+                                <div class="progress-box progress-1">
+                                    <h4 class="por-title">Visits</h4>
+                                    <div class="por-txt">96,930 Users (40%)</div>
+                                    <div class="progress mb-2" style="height: 5px;">
+                                        <div class="progress-bar bg-flat-color-1" role="progressbar" style="width: 40%;" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
+                                </div>
+                                <div class="progress-box progress-2">
+                                    <h4 class="por-title">Bounce Rate</h4>
+                                    <div class="por-txt">3,220 Users (24%)</div>
+                                    <div class="progress mb-2" style="height: 5px;">
+                                        <div class="progress-bar bg-flat-color-2" role="progressbar" style="width: 24%;" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
+                                </div>
+                                <div class="progress-box progress-2">
+                                    <h4 class="por-title">Unique Visitors</h4>
+                                    <div class="por-txt">29,658 Users (60%)</div>
+                                    <div class="progress mb-2" style="height: 5px;">
+                                        <div class="progress-bar bg-flat-color-3" role="progressbar" style="width: 60%;" aria-valuenow="60" aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
+                                </div>
+                                <div class="progress-box progress-2">
+                                    <h4 class="por-title">Targeted  Visitors</h4>
+                                    <div class="por-txt">99,658 Users (90%)</div>
+                                    <div class="progress mb-2" style="height: 5px;">
+                                        <div class="progress-bar bg-flat-color-4" role="progressbar" style="width: 90%;" aria-valuenow="90" aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
+                                </div>
+                            </div> <!-- /.card-body -->
+                        </div>
+                    </div> <!-- /.row -->
+                    <div class="card-body"></div>
+                </div>
+            </div><!-- /# column -->
+        </div>
+        <!--  /Traffic -->
+
+
+        <div class="clearfix"></div>
+
+        <!-- Orders -->
+        <div class="orders">
+            <div class="row">
+                <div class="col-xl-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <h4 class="box-title">Orders </h4>
+                        </div>
+                        <div class="card-body--">
+                            <div class="table-stats order-table ov-h">
+                                <table class="table ">
+                                    <thead>
+                                        <tr>
+                                            <th class="serial">#</th>
+                                            <th class="avatar">Avatar</th>
+                                            <th>ID</th>
+                                            <th>Name</th>
+                                            <th>Product</th>
+                                            <th>Quantity</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td class="serial">1.</td>
+                                            <td class="avatar">
+                                                <div class="round-img">
+                                                    <a href="#"><img class="rounded-circle" src="/AdminLayout/images/avatar/1.jpg" alt=""></a>
+                                                </div>
+                                            </td>
+                                            <td> #5469 </td>
+                                            <td>  <span class="name">Louis Stanley</span> </td>
+                                            <td> <span class="product">iMax</span> </td>
+                                            <td><span class="count">231</span></td>
+                                            <td>
+                                                <span class="badge badge-complete">Complete</span>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td class="serial">2.</td>
+                                            <td class="avatar">
+                                                <div class="round-img">
+                                                    <a href="#"><img class="rounded-circle" src="/AdminLayout/images/avatar/2.jpg" alt=""></a>
+                                                </div>
+                                            </td>
+                                            <td> #5468 </td>
+                                            <td>  <span class="name">Gregory Dixon</span> </td>
+                                            <td> <span class="product">iPad</span> </td>
+                                            <td><span class="count">250</span></td>
+                                            <td>
+                                                <span class="badge badge-complete">Complete</span>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td class="serial">3.</td>
+                                            <td class="avatar">
+                                                <div class="round-img">
+                                                    <a href="#"><img class="rounded-circle" src="/AdminLayout/images/avatar/3.jpg" alt=""></a>
+                                                </div>
+                                            </td>
+                                            <td> #5467 </td>
+                                            <td>  <span class="name">Catherine Dixon</span> </td>
+                                            <td> <span class="product">SSD</span> </td>
+                                            <td><span class="count">250</span></td>
+                                            <td>
+                                                <span class="badge badge-complete">Complete</span>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td class="serial">4.</td>
+                                            <td class="avatar">
+                                                <div class="round-img">
+                                                    <a href="#"><img class="rounded-circle" src="/AdminLayout/images/avatar/4.jpg" alt=""></a>
+                                                </div>
+                                            </td>
+                                            <td> #5466 </td>
+                                            <td>  <span class="name">Mary Silva</span> </td>
+                                            <td> <span class="product">Magic Mouse</span> </td>
+                                            <td><span class="count">250</span></td>
+                                            <td>
+                                                <span class="badge badge-pending">Pending</span>
+                                            </td>
+                                        </tr>
+                                        <tr class=" pb-0">
+                                            <td class="serial">5.</td>
+                                            <td class="avatar pb-0">
+                                                <div class="round-img">
+                                                    <a href="#"><img class="rounded-circle" src="/AdminLayout/images/avatar/6.jpg" alt=""></a>
+                                                </div>
+                                            </td>
+                                            <td> #5465 </td>
+                                            <td>  <span class="name">Johnny Stephens</span> </td>
+                                            <td> <span class="product">Monitor</span> </td>
+                                            <td><span class="count">250</span></td>
+                                            <td>
+                                                <span class="badge badge-complete">Complete</span>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div> <!-- /.table-stats -->
+                        </div>
+                    </div> <!-- /.card -->
+                </div>  <!-- /.col-lg-8 -->
+
+            </div>
+        </div>
+        <!-- /.orders -->
+        <!-- To Do and Live Chat -->
+        <div class="row">
+            <div class="col-lg-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h4 class="card-title box-title">To Do List</h4>
+                        <div class="card-content">
+                            <div class="todo-list">
+                                <div class="tdl-holder">
+                                    <div class="tdl-content">
+                                        <ul>
+                                            <li>
+                                                <label>
+                                                    <input type="checkbox"><i class="check-box"></i><span>Conveniently fabricate interactive technology for ....</span>
+                                                    <a href="#" class="fa fa-times"></a>
+                                                    <a href="#" class="fa fa-pencil"></a>
+                                                    <a href="#" class="fa fa-check"></a>
+                                                </label>
+                                            </li>
+                                            <li>
+                                                <label>
+                                                    <input type="checkbox"><i class="check-box"></i><span>Creating component page</span>
+                                                    <a href="#" class="fa fa-times"></a>
+                                                    <a href="#" class="fa fa-pencil"></a>
+                                                    <a href="#" class="fa fa-check"></a>
+                                                </label>
+                                            </li>
+                                            <li>
+                                                <label>
+                                                    <input type="checkbox" checked=""><i class="check-box"></i><span>Follow back those who follow you</span>
+                                                    <a href="#" class="fa fa-times"></a>
+                                                    <a href="#" class="fa fa-pencil"></a>
+                                                    <a href="#" class="fa fa-check"></a>
+                                                </label>
+                                            </li>
+                                            <li>
+                                                <label>
+                                                    <input type="checkbox" checked=""><i class="check-box"></i><span>Design One page theme</span>
+                                                    <a href="#" class="fa fa-times"></a>
+                                                    <a href="#" class="fa fa-pencil"></a>
+                                                    <a href="#" class="fa fa-check"></a>
+                                                </label>
+                                            </li>
+
+                                            <li>
+                                                <label>
+                                                    <input type="checkbox" checked=""><i class="check-box"></i><span>Creating component page</span>
+                                                    <a href="#" class="fa fa-times"></a>
+                                                    <a href="#" class="fa fa-pencil"></a>
+                                                    <a href="#" class="fa fa-check"></a>
+                                                </label>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div> <!-- /.todo-list -->
+                        </div>
+                    </div> <!-- /.card-body -->
+                </div><!-- /.card -->
+            </div>
+
+            <div class="col-lg-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h4 class="card-title box-title">Live Chat</h4>
+                        <div class="card-content">
+                            <div class="messenger-box">
+                                <ul>
+                                    <li>
+                                        <div class="msg-received msg-container">
+                                            <div class="avatar">
+                                                <img src="/AdminLayout/images/avatar/64-1.jpg" alt="">
+                                                <div class="send-time">11.11 am</div>
+                                            </div>
+                                            <div class="msg-box">
+                                                <div class="inner-box">
+                                                    <div class="name">
+                                                        John Doe
+                                                    </div>
+                                                    <div class="meg">
+                                                        Lorem ipsum dolor sit amet, consectetur adipisicing elit. Perspiciatis sunt placeat velit ad reiciendis ipsam
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div><!-- /.msg-received -->
+                                    </li>
+                                    <li>
+                                        <div class="msg-sent msg-container">
+                                            <div class="avatar">
+                                                <img src="/AdminLayout/images/avatar/64-2.jpg" alt="">
+                                                <div class="send-time">11.11 am</div>
+                                            </div>
+                                            <div class="msg-box">
+                                                <div class="inner-box">
+                                                    <div class="name">
+                                                        John Doe
+                                                    </div>
+                                                    <div class="meg">
+                                                        Hay how are you doing?
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div><!-- /.msg-sent -->
+                                    </li>
+                                </ul>
+                                <div class="send-mgs">
+                                    <div class="yourmsg">
+                                        <input class="form-control" type="text">
+                                    </div>
+                                    <button class="btn msg-send-btn">
+                                        <i class="pe-7s-paper-plane"></i>
+                                    </button>
+                                </div>
+                            </div><!-- /.messenger-box -->
+                        </div>
+                    </div> <!-- /.card-body -->
+                </div><!-- /.card -->
+            </div>
+        </div>
+        <!-- /To Do and Live Chat -->
+
+
+    </div>
+    <!-- .animated -->
+</div>
+@code {
+
+    [CascadingParameter]
+    public Task<AuthenticationState> AuthenticationState { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authenticationState = await AuthenticationState;
+
+        if (!authenticationState.User.IsInRole(SD.Role_Admin))
+        {
+            var uri = new Uri(_navigationManager.Uri);
+            _navigationManager.NavigateTo($"/identity/Account/Login?returnUrl={uri.LocalPath}");
+        }
+    }
+}

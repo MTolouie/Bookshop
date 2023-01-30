@@ -1,0 +1,41 @@
+﻿@page "/Account/Logout"
+@inject IAccountRepository _accountRepository
+@inject IJSRuntime _jsRuntime
+@inject ILocalStorageService _localStorage
+@inject NavigationManager _navigationManager
+
+<div class="u-s-p-y-60">
+
+                <!--====== Section Content ======-->
+                <div class="section__content">
+                    <div class="container">
+                        <div class="row">
+                            <div class="col-lg-12 col-md-12 u-s-m-b-30">
+                                <div class="empty">
+                                    <div class="empty__wrap">
+                                        <span class="empty__big-text">Logged Out</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!--====== End - Section Content ======-->
+            </div>
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        var IsTokenSet = await _localStorage.GetItemAsync<string>(SD.Local_Token);       
+
+        if(IsTokenSet is not null)
+        {
+            await _accountRepository.LogOut();
+            await _jsRuntime.ToastrSuccess("Logged Out");
+            _navigationManager.NavigateTo("/");
+        }
+        else
+        {
+            await _jsRuntime.ToastrError("Already Logged Out");
+        }
+    }
+}

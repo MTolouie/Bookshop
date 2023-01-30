@@ -1,0 +1,89 @@
+﻿@page "/Stripe/SuccessPayment"
+@inject ICartRepository _cartRepository
+@inject IBookRepository _bookRepository
+@inject IJSRuntime _jsRuntime
+@inject ILocalStorageService _localStorage
+@inject NavigationManager _navigationManager
+    <!--====== Section 1 ======-->
+    <div class="container">
+
+        <!--====== Section Content ======-->
+        <div class="col-md-12">
+            <div class="container">
+                <div class="row">
+                    <div class="col-lg-12 col-md-12 u-s-m-b-30">
+                        <div class="center-text mb-5 mt-3">
+                            <div class="empty__wrap">
+
+                                <h2 class="empty__big-text">SuccessFul Shopping </h2>
+
+                                <h3 class="empty__text-1">@CartDTO.CreateDate.ToGregorian()</h3>
+                                <br>
+                                <a class="empty__redirect-link btn--e-brand" href="/Dashboard/Index">Go To Dashboard</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!--====== End - Section Content ======-->
+    </div>
+    <!--====== End - Section 1 ======-->
+@code {
+
+    public CartDTO CartDTO { get; set; } = new();
+
+    public UserDTO UserDTO { get; set; } = new();
+
+    public string Token { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        CartDTO = await _localStorage.GetItemAsync<CartDTO>(SD.Local_Cart_data);
+        Token = await _localStorage.GetItemAsync<string>(SD.Local_Token);
+        UserDTO = await _localStorage.GetItemAsync<UserDTO>(SD.Local_UserDetails);
+        var StripeSessionId = await _localStorage.GetItemAsync<string>(SD.Local_Stripe_Session_Id);
+        if (UserDTO is null || Token is null)
+        {
+            _navigationManager.NavigateTo("/Account/Login");
+            return;
+        }
+        if (CartDTO is null || StripeSessionId is null)
+        {
+            _navigationManager.NavigateTo("/Cart/Checkout");
+            return;
+        }
+
+
+
+        var IsUpdated = await _cartRepository.MarkCartIsFinally(SD.CartApiPath, CartDTO.CartId, StripeSessionId, Token);
+
+        if (IsUpdated)
+        {
+            var IsQuantityDecreased = false;
+            foreach (var detail in CartDTO.CartDetails)
+            {
+                IsQuantityDecreased = await _bookRepository.DecreaseQuantity(SD.BooksApiPath, "DecreaseQuantity", detail.BookId, Token);
+
+            }
+            if (IsQuantityDecreased)
+            {
+                await _localStorage.RemoveItemAsync(SD.Local_Cart_data);
+                await _localStorage.RemoveItemAsync(SD.Local_Stripe_Session_Id);
+                await _jsRuntime.Swal("success", "Success", "Shopping Was Successful");
+                return;
+            }
+            else
+            {
+                await _jsRuntime.Swal("error", "Error", "Something Went Wrong");
+                return;
+            }
+        }
+        else
+        {
+            await _jsRuntime.Swal("error", "Error", "Something Went Wrong");
+            return;
+        }
+
+    }
+}

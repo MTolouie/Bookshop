@@ -1,0 +1,225 @@
+﻿@page "/Dashboard/EditAddress/{Id}"
+@using Ganss.XSS
+@inject IAddressRepository _addressRepository
+@inject ILocalStorageService _localStorage
+@inject NavigationManager _navigationManager
+@inject IJSRuntime _jsRuntime
+@inject IHashids _hashId
+@attribute [Authorize(Roles = SD.Role_Customer)]
+
+<HeadContent>
+    <link rel="stylesheet" href="css/Dashboard.css" type="text/css">
+</HeadContent>
+
+
+
+<div class="container">
+    <div class="main-body">
+
+        <!-- Breadcrumb -->
+        <nav aria-label="breadcrumb" class="main-breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/">Home</a></li>
+                <li class="breadcrumb-item active" aria-current="page">User Profile</li>
+            </ol>
+        </nav>
+        <!-- /Breadcrumb -->
+
+        <div class="row gutters-sm">
+            <div class="col-md-4 mb-3">
+                <DashboardSideNav UserName="@User.FullName"></DashboardSideNav>
+                <DashboardInfoNav></DashboardInfoNav>
+            </div>
+            <div class="col-md-8">
+
+                <section>
+                    <EditForm Model="addressDTO" OnValidSubmit="UpdateAddress" OnInvalidSubmit="InvalidSubmit">
+                        <input type="hidden" @bind-value="addressDTO.UserId" />
+                        <div class="col-md-12">
+                            <div class="card">
+                                <div class="card-header">Update Address</div>
+
+                                <div class="card-body card-block">
+
+                                    <div class="form-group">
+                                        <DataAnnotationsValidator></DataAnnotationsValidator>
+                                        <div style="color:red;">
+                                            <ValidationSummary></ValidationSummary>
+                                        </div>
+                                        <div class="input-group">
+                                            <div class="input-group-prepend">
+                                                <span class="input-group-text">Address Title</span>
+                                            </div>
+                                            <InputText @bind-Value="addressDTO.AddressTitle" class="form-control" type="text" placeholder="Title">
+                                            </InputText>
+                                            <div class="input-group-prepend"> <span class="input-group-text"><i class="fa fa-address-book"></i></span></div>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <div class="input-group">
+                                            <div class="input-group-prepend">
+                                                <span class="input-group-text">PROVINCE</span>
+                                            </div>
+                                            <InputText @bind-Value="addressDTO.PROVINCE" class="form-control" type="text" id="Province" placeholder="Province">
+                                            </InputText>
+                                            <div class="input-group-prepend"> <span class="input-group-text"><i class="fa fa-address-card"></i></span></div>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <div class="input-group">
+                                            <div class="input-group-prepend">
+                                                <span class="input-group-text">Town</span>
+                                            </div>
+                                            <InputText @bind-Value="addressDTO.Town" class="form-control" type="text" placeholder="Town">
+                                            </InputText>
+                                            <div class="input-group-prepend"> <span class="input-group-text"><i class="fa fa-address-card"></i></span></div>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <div class="input-group">
+                                            <div class="input-group-prepend">
+                                                <span class="input-group-text">PhoneNo</span>
+                                            </div>
+                                            <InputText @bind-Value="addressDTO.PhoneNo" class="form-control" type="text"  placeholder="PhoneNo">
+                                            </InputText>
+                                            <div class="input-group-prepend"> <span class="input-group-text"><i class="fa fa-phone"></i></span></div>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <div class="input-group">
+                                            <div class="input-group-prepend">
+                                                <span class="input-group-text">Zipcode</span>
+                                            </div>
+                                            <InputText @bind-Value="addressDTO.Zipcode" class="form-control" type="text"  placeholder="Zip/Postal Code">
+                                            </InputText>
+                                            <div class="input-group-prepend"> <span class="input-group-text"><i class="fa fa-code"></i></span></div>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <div class="input-group">
+                                            <div class="input-group-prepend">
+                                                <span class="input-group-text">Address Description</span>
+                                            </div>
+                                            <InputTextArea @bind-Value="addressDTO.AddressDescription" type="text"  class="form-control"  id="address-postal" placeholder="Address Description">
+                                            </InputTextArea>
+                                            <div class="input-group-prepend"> <span class="input-group-text"><i class="fa fa-audio-description"></i></span></div>
+                                        </div>
+                                    </div>
+                                    <div class="form-actions form-group">
+                                        <button class="btn btn-outline-warning btn-block" type="submit">Edit</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </EditForm>
+
+                </section>
+
+
+
+            </div>
+        </div>
+
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public string Id { get; set; }
+
+    public AddressDTO addressDTO { get; set; } = new();
+
+    public UserDTO User { get; set; } = new();
+
+    public string Token { get; set; }
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        User = await _localStorage.GetItemAsync<UserDTO>(SD.Local_UserDetails);
+        Token = await _localStorage.GetItemAsync<string>(SD.Local_Token);
+        if (User is null || Token is null)
+        {
+            _navigationManager.NavigateTo("/Account/Login");
+            return;
+        }
+
+        var DecodedId = _hashId.Decode(Id)[0];
+        addressDTO = await _addressRepository.GetAddressById(SD.AddressApiPath, "GetAddressById", DecodedId, Token);
+
+    }
+
+
+
+
+    private async Task UpdateAddress()
+    {
+        var IsInvalid = await InvalidSubmit();
+
+        if (IsInvalid)
+        {
+            await _jsRuntime.ToastrError("Form Is Invalid");
+            return;
+        }
+
+        var DoesExist = await _addressRepository.DoesAddressExists(SD.AddressApiPath, "DoesAddressExists", Token, addressDTO);
+
+        if (DoesExist)
+        {
+            await _jsRuntime.ToastrError($"The Address Title '{addressDTO.AddressTitle}' Already Exists");
+            return;
+        }
+
+        var IsEdited = await _addressRepository.UpdateAsync(SD.AddressApiPath, Token, addressDTO);
+
+        if (IsEdited)
+        {
+            await _jsRuntime.ToastrSuccess("Updated Successfuly");
+            _navigationManager.NavigateTo("/Dashboard/Addresses");
+            return;
+        }
+        else
+        {
+            await _jsRuntime.ToastrError("Something Went Wrong");
+            return;
+        }
+
+    }
+
+    private async Task<bool> InvalidSubmit()
+    {
+        if (addressDTO.AddressTitle is null)
+        {
+            await _jsRuntime.ToastrError("Title Is Required");
+            return true;
+        }
+
+        if (addressDTO.PhoneNo is null)
+        {
+            await _jsRuntime.ToastrError("PhoneNo Is Required");
+            return true;
+        }
+        if (addressDTO.PROVINCE is null)
+        {
+            await _jsRuntime.ToastrError("Province Is Required");
+            return true;
+        }
+        if (addressDTO.Town is null)
+        {
+            await _jsRuntime.ToastrError("Town Is Required");
+            return true;
+        }
+        if (addressDTO.Zipcode is null)
+        {
+            await _jsRuntime.ToastrError("Zipcode Is Required");
+            return true;
+        }
+
+        if (addressDTO.AddressDescription.Length < 50)
+        {
+            await _jsRuntime.ToastrError("Address Description Must Be More Than 50 Characters");
+            return true;
+        }
+        return false;
+    }
+}

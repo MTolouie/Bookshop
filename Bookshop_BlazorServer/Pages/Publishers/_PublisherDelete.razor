@@ -1,0 +1,57 @@
+﻿@inject IPublisherRepository _publisherRepository
+@inject IJSRuntime _jsRuntime
+@attribute [Authorize(Roles = SD.Role_Admin)]
+<div class="simple-form">
+
+    <div class="form-group">
+        <label for="first-name">Publisher Name</label>
+        <input value="@PublisherTitle" type="text" disabled class="form-control" />
+    </div>
+    @if (IsProcess)
+    {
+        <button @onclick="SubmitForm" class="btn btn-outline-primary btn-block"><i class="fade fa-spin fa-spinner"></i> Loading ...</button>
+    <button @onclick="Cancel" class="btn btn-outline-secondary  btn-block"><i class="fade fa-spin fa-spinner"></i> Loading ...</button>
+    }
+    else
+    {
+        <button @onclick="SubmitForm" class="btn btn-outline-danger btn-block">Delete</button>
+    <button @onclick="Cancel" class="btn btn-outline-secondary btn-block">Cancel</button>
+    }
+</div>
+@code {
+
+
+    [Parameter]
+    public int PublisherId { get; set; }
+
+    [Parameter]
+    public string PublisherTitle{ get; set; }
+
+    public bool IsProcess { get; set; } = false;
+
+    [CascadingParameter]
+    BlazoredModalInstance ModalInstance { get; set; }
+
+    async Task SubmitForm()
+    {
+        var status = await _publisherRepository.DeletePublisher(PublisherId);
+        if (status)
+        {
+            await _jsRuntime.ToastrSuccess("Deleted Successfuly");
+            await ModalInstance.CloseAsync(ModalResult.Ok($"Deleted Successfuly"));
+            
+        }
+        else
+        {
+            await _jsRuntime.ToastrError("Something Went Wrong");
+            await ModalInstance.CancelAsync();
+        }
+    }
+
+    async Task Cancel()
+    {
+         await ModalInstance.CancelAsync();
+    }
+
+}
+

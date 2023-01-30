@@ -1,0 +1,41 @@
+﻿@inject ICartRepository _cartRepository
+@inject IWishlistRepository _wishlistRepository
+@inject ILocalStorageService _localStorage
+@inject NavigationManager _navigationManager
+<div class="card mt-3">
+    <ul class="list-group list-group-flush">
+        <li class="list-group-item d-flex justify-content-between align-items-center flex-wrap">
+            <h6 class="mb-0">Number Of Orders</h6>
+            <span class="text-secondary">@NumberOfCarts</span>
+        </li>
+        <li class="list-group-item d-flex justify-content-between align-items-center flex-wrap">
+            <h6 class="mb-0">Number Of Wishlist Items</h6>
+            <span class="text-secondary">@NumberOfWishlists</span>
+        </li>
+       
+    </ul>
+</div>
+
+@code {
+    public int NumberOfCarts { get; set; }
+
+    public int NumberOfWishlists { get; set; }
+
+    public string Token { get; set; }
+
+    public UserDTO UserDTO { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        Token = await _localStorage.GetItemAsync<string>(SD.Local_Token);
+        UserDTO = await _localStorage.GetItemAsync<UserDTO>(SD.Local_UserDetails);
+        if (UserDTO is null || Token is null)
+        {
+            _navigationManager.NavigateTo("/Account/Login");
+            return;
+        }
+
+        NumberOfCarts = await _cartRepository.GetNumberOfUserCart(SD.CartApiPath, UserDTO.Id, Token);
+        NumberOfWishlists = await _wishlistRepository.GetNumberOfUserWishlist(SD.WishlistApiPath,"GetNumberOfUserWishlist", UserDTO.Id, Token);
+    }
+}

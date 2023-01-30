@@ -1,0 +1,96 @@
+﻿@page "/Account/Login"
+@inject IJSRuntime _jsRuntime
+@inject IAccountRepository _accountRepository
+@inject NavigationManager _navigationManager
+
+
+<div class="container">
+    <div class="col-md-12 mt-5 mb-5">
+        <center>
+        <section>
+            <EditForm Model="authenticationDTO" OnValidSubmit="LogTheUserIn" OnInvalidSubmit="InvalidSubmit" >
+
+                <div class="col-lg-6 text-center">
+
+                    <div class="card">
+                        <div class="card-header">Login Form</div>
+
+                        <div class="card-body card-block">
+
+                            <div class="form-group">
+                                <DataAnnotationsValidator></DataAnnotationsValidator>
+                                <div style="color:red;">
+                                    <ValidationSummary></ValidationSummary>
+                                </div>
+                                <div class="input-group">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text">Email</span>
+                                    </div>
+                                    <input @bind-value="authenticationDTO.Email" class="form-control" id="login-email" placeholder="Enter E-mail">
+                                    <div class="input-group-prepend"> <span class="input-group-text"><i class="fa fa-envelope"></i></span></div>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <div class="input-group">
+                                     <div class="input-group-prepend">
+                                        <span class="input-group-text">Password</span>
+                                    </div>
+                                    <input @bind-value="authenticationDTO.Password" type="password" class="form-control" id="login-password" placeholder="Enter Password">
+                                    <div class="input-group-prepend"> <span class="input-group-text"><i class="fa fa-asterisk"></i></span></div>
+                                </div>
+                            </div>
+
+                            <div class="form-actions form-group">
+                                <button class="btn btn-outline-success btn-block" type="submit">LOGIN</button>
+                            </div>
+                            <div class="checkbox">
+                                <label class="form-label">
+                                    <a class="text-primary" href="/Account/ForgotPassword">Forgot Your Password?</a><br />
+                                    <a class="text-primary" href="/Account/register">Create An Account</a>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </EditForm>
+
+        </section>
+        </center>
+    </div>
+</div>
+
+
+@code {
+    public AuthenticationDTO authenticationDTO { get; set; } = new();
+
+    private async Task LogTheUserIn()
+    {
+        if (authenticationDTO.Email is not null && authenticationDTO.Password is not null)
+        {
+            var result = await _accountRepository.SignIn(authenticationDTO);
+            if (result.IsAuthSuccessful)
+            {
+                await _jsRuntime.ToastrSuccess($"Logged In");
+                _navigationManager.NavigateTo("/");
+            }
+            else
+            {
+                await _jsRuntime.ToastrError(result.ErrorMessage);
+            }
+        }
+    }
+
+    private async Task InvalidSubmit()
+    {
+        if (authenticationDTO.Email is null)
+        {
+            await _jsRuntime.ToastrError($"Email Is null");
+            return;
+        }
+        if (authenticationDTO.Password is null)
+        {
+            await _jsRuntime.ToastrError($"Password Is null");
+            return;
+        }
+    }
+}

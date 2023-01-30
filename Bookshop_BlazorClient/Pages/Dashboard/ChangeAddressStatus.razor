@@ -1,0 +1,154 @@
+﻿@page "/Dashboard/ChangeAddressStatus"
+@inject IAddressRepository _addressRepository
+@inject NavigationManager _navigationManager
+@inject ILocalStorageService _localStorage
+@inject IHashids _hashId
+@inject IJSRuntime _jsRuntime
+@attribute [Authorize(Roles = SD.Role_Customer)]
+
+<HeadContent>
+    <link rel="stylesheet" href="css/Dashboard.css" type="text/css">
+</HeadContent>
+<!--====== End - Section 1 ======-->
+<!--====== Section 2 ======-->
+<div class="container">
+    <div class="main-body">
+
+        <!-- Breadcrumb -->
+        <nav aria-label="breadcrumb" class="main-breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/">Home</a></li>
+                <li class="breadcrumb-item active" aria-current="page">User Profile</li>
+            </ol>
+        </nav>
+        <!-- /Breadcrumb -->
+
+        <div class="row gutters-sm">
+            <div class="col-md-4 mb-3">
+                <DashboardSideNav UserName="@User.FullName"></DashboardSideNav>
+                <DashboardInfoNav></DashboardInfoNav>
+            </div>
+            <div class="col-md-8">
+                <h2>Addresses</h2>
+                <div class="card mb-3">
+                    <div class="card-body">
+                        @if (addressDTOs is not null && addressDTOs.Any())
+                        {
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Action</th>
+                                        <th>Address Title</th>
+                                        <th>Province</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+
+                                    @foreach (var address in addressDTOs)
+                                    {
+                                        <tr>
+                                            <td>
+
+                                                <!--====== Radio Box ======-->
+                                                <div class="radio-box">
+
+                                                    <input type="radio" @onchange="(e)=>ChangeStatus(e,address.AddressId,User.Id)" checked="@(address.IsSelected ? "checked":null)" id="address-1" name="default-address">
+                                                    <div class="radio-box__state radio-box__state--primary">
+
+                                                        <label class="radio-box__label" for="address-1"></label>
+                                                    </div>
+                                                </div>
+                                                <!--====== End - Radio Box ======-->
+                                            </td>
+                                            <td>@address.AddressTitle</td>
+                                            <td>@address.PROVINCE</td>
+                                            <td>
+                                                <div class="gl-text">
+                                                    @if (address.IsSelected)
+                                                    {
+                                                        <p>Default Shipping Address</p>
+                                                    }
+                                                    else
+                                                    {
+                                                        <p>Not Selected</p>
+                                                    }
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+
+                                </tbody>
+                            </table>
+                        }
+                        else
+                        {
+                            <div class="alert alert-danger text-center">
+                                <h2>No Content</h2>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+
+
+            </div>
+        </div>
+
+    </div>
+</div>
+
+
+
+
+<!--====== End - Section 2 ======-->
+@code {
+    public UserDTO User { get; set; } = new();
+
+    public IEnumerable<AddressDTO> addressDTOs { get; set; } = new List<AddressDTO>();
+    //[CascadingParameter]
+    //public Task<AuthenticationState> AuthenticationState{ get; set; }
+
+    public string Token { get; set; }
+
+    public ChangeAddressStatusViewModel ChangeAddressStatusVM { get; set; } = new();
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        //var authenticationState = await AuthenticationState;
+        User = await _localStorage.GetItemAsync<UserDTO>(SD.Local_UserDetails);
+        Token = await _localStorage.GetItemAsync<string>(SD.Local_Token);
+        if (User is null || Token is null)
+        {
+            _navigationManager.NavigateTo("/Account/Login");
+            return;
+        }
+
+        addressDTOs = await _addressRepository.GetUserAddresses(SD.AddressApiPath, User.Id, Token);
+
+    }
+
+    private async Task ChangeStatus(ChangeEventArgs args, int addressId, string userId)
+    {
+
+        if (args?.Value?.ToString() == "on")
+        {
+            var IsChanged = await _addressRepository.ChangeAddressStatus(SD.AddressApiPath, "ChangeAddressStatus", addressId, userId, Token);
+
+            if (IsChanged)
+            {
+                await _jsRuntime.Swal("success", "success", "Changed Successfuly");
+                //_navigationManager.NavigateTo("/Dashboard/ChangeAddressStatus");
+                addressDTOs = await _addressRepository.GetUserAddresses(SD.AddressApiPath, User.Id, Token);
+                return;
+            }
+            else
+            {
+                await _jsRuntime.ToastrError("Something Went Wrong");
+                return;
+            }
+        }
+    }
+
+}

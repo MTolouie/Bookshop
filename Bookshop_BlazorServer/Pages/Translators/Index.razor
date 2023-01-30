@@ -1,0 +1,218 @@
+﻿@page "/Translators/Index/{pageid:int}"
+@inject IJSRuntime _jsRuntime
+@inject ITranslatorRepository _translatorRepository
+@inject NavigationManager _navigationManager
+@inject IHashids _hashId
+@inject IFileUpload _fileUpload
+@inject IHttpContextAccessor _httpContextAccessor
+@attribute [Authorize(Roles = SD.Role_Admin)]
+<PageTitle>Translators</PageTitle>
+
+<div class="col-mg-10" style="margin-left:350px;margin-top:80px;max-width:500px;margin-bottom:50px;">
+    <button class="btn btn-outline-primary btn-block" @onclick="ShowCreateModal">Create</button>
+    <div class="card" style="margin-top:10px;">
+        <div class="card-body">
+            <h2 class="box-title text-center">Translators</h2>
+            <div class="form-inline mt-4 ml-2">
+                <div class="form-group">
+                    Name : &ensp; <input @bind="Name" class="form-control" name="Name" id="Name" placeholder="Name" style="max-width:200px;">
+                </div>
+                <a @onclick="NavigateToIndex" class="btn btn-outline-dark btn-block  ml-3" style="max-width:70px;">
+                    <i class="fa fa-eraser"></i>
+                </a>
+                <button @onclick="FilterTable" class="btn btn-outline-success btn-block mb-2 ml-1" style="max-width:70px;"><i class="fa fa-search"></i></button>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-stats order-table ov-h">
+
+                @if (translatorsDTO.Any())
+                {
+                    <table class="table ">
+                        <thead>
+                            <tr>
+                                <th class="">#</th>
+                                <th class="avatar text-center">Category Title</th>
+                                <th class="avatar text-center">Actions</th>
+
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @{
+                                int i = 1;
+                            }
+
+                            @foreach (var item in translatorsDTO)
+                            {
+
+                                <tr>
+
+                                    <td class="serial">@(i++)</td>
+                                    <td class="avatar">
+                                        <div class="round-img">
+                                            @item.TranslatorName
+                                        </div>
+                                    </td>
+
+                                    <td class="text-center">
+                                        <button @onclick="@(()=>ShowDeleteModal(item.TranslatorId,item.TranslatorName))" class="btn btn-outline-danger">Delete</button>
+                                        <button @onclick="@(()=>ShowEditModal(item.TranslatorId))" class="btn btn-outline-warning">Edit</button>
+                                    </td>
+                                </tr>
+
+                            }
+                        </tbody>
+                    </table>
+                }
+
+                else
+                {
+                    @if (IsLoading)
+                    {
+                        <div class="text-center">
+                            <img src="/AdminLayout/images/loader.gif" height="200" width="200">
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-danger text-center">
+                            <h2>No Data</h2>
+                        </div>
+                    }
+
+
+                }
+            </div> <!-- /.table-stats -->
+        </div>
+    </div> <!-- /.card -->
+    @if (PageCount > 0)
+    {
+        <ul class="pagination">
+            @for (int j = 1; j <= PageCount; j++)
+            {
+                <li class="page-item @(pageid == j ?"active" : "")"><a class="page-link mb-5" href="/Translators/Index/@j">@j</a></li>
+                @*?name=@(Name is not null ? Name : "")*@
+            }
+        </ul>
+    }
+</div> <!-- /.col-lg-8 -->
+<!-- /.orders -->
+@code {
+    public List<TranslatorDTO> translatorsDTO { get; set; } = new();
+
+    [Parameter]
+    public int pageid { get; set; } = 1;
+
+    public string? Name { get; set; } = "";
+
+    public int PageCount { get; set; }
+
+    public bool IsLoading { get; set; }
+
+    [CascadingParameter]
+    public IModalService Modal { get; set; }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await LoadData();
+        }
+    }
+
+    private async Task LoadData()
+    {
+        IsLoading = true;
+        StateHasChanged();
+        (translatorsDTO, PageCount) = await _translatorRepository.GetAllTranslators(pageid, Name);
+        IsLoading = false;
+        StateHasChanged();
+    }
+
+    async Task FilterTable()
+    {
+        await LoadData();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await LoadData();
+    }
+
+
+    private async Task ShowCreateModal()
+    {
+        var options = new ModalOptions()
+            {
+                Position = ModalPosition.Center,
+                HideCloseButton = true,
+                Animation = ModalAnimation.FadeInOut(0.3)
+            };
+
+        var deleteModal = Modal.Show<_TranslatorCreate>("Create Translator ?", options);
+        var result = await deleteModal.Result;
+        if (!result.Cancelled)
+        {
+            await LoadData();
+
+        }
+
+    }
+
+    private async Task ShowDeleteModal(int translatorId, string translatorName)
+    {
+        var options = new ModalOptions()
+            {
+                Position = ModalPosition.Center,
+                HideCloseButton = false,
+                Animation = ModalAnimation.FadeInOut(0.3),
+                ContentScrollable = true
+            };
+
+        ModalParameters parameters = new ModalParameters();
+        parameters.Add("TranslatorId", translatorId);
+        parameters.Add("TranslatorName", translatorName);
+
+
+        var DeleteModal = Modal.Show<_TranslatorDelete>("Delete Translator ?", parameters, options);
+        var result = await DeleteModal.Result;
+
+        if (!result.Cancelled)
+        {
+            await LoadData();
+        }
+    }
+
+
+    private async Task ShowEditModal(int translatorId)
+    {
+        var options = new ModalOptions()
+            {
+                Position = ModalPosition.Center,
+                HideCloseButton = true,
+                Animation = ModalAnimation.FadeInOut(0.3)
+            };
+
+        ModalParameters parameters = new ModalParameters();
+        parameters.Add("translatorId", translatorId);
+
+
+        var EditModal = Modal.Show<_TranslatorEdit>("Update Translator ?", parameters, options);
+        var result = await EditModal.Result;
+
+        if (!result.Cancelled)
+        {
+            await LoadData();
+
+        }
+    }
+
+    async Task NavigateToIndex()
+    {
+        Name = "";
+        _navigationManager.NavigateTo($"/Translators/Index/1");
+        await LoadData();
+    }
+
+}
+

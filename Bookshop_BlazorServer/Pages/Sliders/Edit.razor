@@ -1,0 +1,293 @@
+﻿@page "/Sliders/Edit/{SliderId}"
+@inject IJSRuntime _jsRuntime
+@inject IFileUpload _fileUpload
+@inject ISliderRepository _sliderRepository
+@inject NavigationManager _navigationManager
+@inject IHttpContextAccessor _httpContextAccessor
+@inject IHashids _hashId
+@attribute [Authorize(Roles = SD.Role_Admin)]
+
+<div class="container" style="margin-top:100px;margin-left:50px;margin-right:50px;">
+    <EditForm Model="sliderDTO" OnValidSubmit="UpdateSlider">
+        @*<DataAnnotationsValidator></DataAnnotationsValidator>*@
+        <div class="form-row">
+            <div class="form-group col-md-4">
+                <label for="Name">Slider Name</label>
+                <InputText @bind-Value="sliderDTO.SliderTitle" class="form-control w-75" placeholder="Slider Title"></InputText>
+                @*<ValidationMessage style="color:red;margin-left:5px;" For="()=>sliderDTO.SliderTitle"></ValidationMessage>*@
+            </div>
+            <div class="form-group col-md-3 mr-5">
+                <label for="AuthorImage">Slider Image</label>
+                <InputFile OnChange="UploadImg" class="form-control" id="AuthorImage"></InputFile>
+                @*<ValidationMessage style="color:red;margin-left:5px;" For="()=>sliderDTO.Image"></ValidationMessage>*@
+            </div>
+
+            <div class="form-group col-md-3">
+                @if (ChosenImg is not null)
+                {
+
+                    <label for="AuthorImage">Chosen Image</label>
+                    <img src="@ChosenImg" class="rounded-circle" id="AuthorChosenImage" width="100" height="100">
+
+
+                }
+            </div>
+            @if (CurrentImage != ChosenImg)
+            {
+                <a class="btn btn-outline-danger h-25 mt-4 @(ChosenImg is null ? "invisible" : "")" @onclick="DeleteImage">Delete Image</a>
+            }
+
+
+            <div class="form-group col-md-4">
+                <label for="Name">Start Date</label>
+                <InputDate @bind-Value="sliderDTO.StartDate" class="form-control w-75" placeholder="Start Date"></InputDate>
+                @*<ValidationMessage style="color:red;margin-left:5px;" For="()=>sliderDTO.StartDate"></ValidationMessage>*@
+            </div>
+            <div class="form-group col-md-4">
+                <label for="Name">End Date</label>
+                <InputDate @bind-Value="sliderDTO.EndDate" class="form-control w-75" placeholder="End Date"></InputDate>
+                @*<ValidationMessage style="color:red;margin-left:5px;" For="()=>sliderDTO.EndDate"></ValidationMessage>*@
+            </div>
+            <div class="form-group col-md-4">
+                <label for="Name">Slider Url</label>
+                <InputText @bind-Value="sliderDTO.Url" class="form-control w-75" placeholder="End Date"></InputText>
+                @*<ValidationMessage style="color:red;margin-left:5px;" For="()=>sliderDTO.Url"></ValidationMessage>*@
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="inputAddress">Slider Short Description</label>
+            <BlazoredTextEditor @ref="@QuillHtml">
+                <ToolbarContent>
+                    <select class="ql-header">
+                        <option selected=""></option>
+                        <option value="1"></option>
+                        <option value="2"></option>
+                        <option value="3"></option>
+                        <option value="4"></option>
+                        <option value="5"></option>
+                    </select>
+                    <span class="ql-formats">
+                        <button class="ql-bold"></button>
+                        <button class="ql-italic"></button>
+                        <button class="ql-underline"></button>
+                        <button class="ql-strike"></button>
+                    </span>
+                    <span class="ql-formats">
+                        <select class="ql-color"></select>
+                        <select class="ql-background"></select>
+                    </span>
+                    <span class="ql-formats">
+                        <button class="ql-list" value="ordered"></button>
+                        <button class="ql-list" value="bullet"></button>
+                    </span>
+                    <span class="ql-formats">
+                        <button class="ql-link"></button>
+                    </span>
+                </ToolbarContent>
+                <EditorContent>
+                </EditorContent>
+            </BlazoredTextEditor>
+            @if (QuillError is not null)
+            {
+                <span class="text-danger">
+                    @QuillError
+                </span>
+            }
+        </div>
+        <button type="submit" class="btn btn-outline-primary btn-block  mb-5">Create Slider</button>
+    </EditForm>
+</div>
+
+@code {
+
+    [Parameter]
+    public string SliderId { get; set; }
+
+    public SlidersDTO sliderDTO { get; set; } = new();
+
+    public string ChosenImg { get; set; }
+
+    public BlazoredTextEditor QuillHtml { get; set; } = new();
+
+    public string CurrentImage { get; set; }
+
+    public InputFile ImageInputFile { get; set; }
+
+    public string QuillError { get; set; }
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        sliderDTO = await _sliderRepository.GetSliderById(_hashId.Decode(SliderId)[0]);
+        CurrentImage = sliderDTO.Image;
+        ChosenImg = sliderDTO.Image;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+
+        if (!firstRender)
+            return;
+
+        bool loading = true;
+        while (loading)
+        {
+            try
+            {
+                if (!string.IsNullOrEmpty(sliderDTO.ShortDesc))
+                {
+                    await QuillHtml.LoadHTMLContent(sliderDTO.ShortDesc);
+                }
+                loading = false;
+            }
+            catch
+            {
+                await Task.Delay(10);
+                loading = true;
+            }
+        }
+        StateHasChanged();
+    }
+
+
+
+    async Task UploadImg(InputFileChangeEventArgs e)
+    {
+        var Url = _httpContextAccessor.GetSliderImagePath();
+        var fileName = CurrentImage.Replace(Url, null);
+        if (fileName == "No_Image.jpg")
+        {
+            var fileInfo = new FileInfo(e.File.Name);
+            if (fileInfo.Extension == ".png" || fileInfo.Extension == ".jpg" || fileInfo.Extension == ".jpeg")
+            {
+                ChosenImg = await _fileUpload.UploadFile(e.File, SD.SliderAvatar);
+            }
+            else
+            {
+                await _jsRuntime.ToastrError("Only .png , .jpeg Or .jpg Files Are Accepted");
+            }
+        }
+        else
+        {
+            var IsDeleted = await _fileUpload.DeleteFile(fileName, SD.SliderAvatar);
+            if (IsDeleted)
+            {
+                var fileInfo = new FileInfo(e.File.Name);
+                if (fileInfo.Extension == ".png" || fileInfo.Extension == ".jpg" || fileInfo.Extension == ".jpeg")
+                {
+                    ChosenImg = await _fileUpload.UploadFile(e.File, SD.SliderAvatar);
+                }
+                else
+                {
+                    await _jsRuntime.ToastrError("Only .png , .jpg And .jpeg Files Are Accepted");
+                }
+            }
+            else
+            {
+                await _jsRuntime.ToastrError("Could Not Delete The Current File");
+            }
+        }
+    }
+
+    async Task DeleteImage()
+    {
+        var Url = _httpContextAccessor.GetSliderImagePath();
+        string filename = ChosenImg.Replace(Url, null);
+
+        if (filename != "No_Image.jpg")
+        {
+            var IsDeleted = await _fileUpload.DeleteFile(filename, SD.SliderAvatar);
+            if (IsDeleted)
+            {
+                await _jsRuntime.ToastrSuccess("Deleted Successfuly");
+                var url = _httpContextAccessor.GetSliderImagePath();
+                CurrentImage = $"{url}No_Image.jpg";
+                ChosenImg = null;
+            }
+            else
+            {
+                await _jsRuntime.ToastrSuccess("Something Went Wrong");
+            }
+        }
+        else
+        {
+            await _jsRuntime.ToastrWarning("No Image");
+        }
+    }
+
+
+
+
+    async Task UpdateSlider()
+    {
+        var IsValid = await InvalidForm();
+        if (!IsValid)
+        {
+
+            var ShortDescText = await QuillHtml.GetHTML();
+            var sanitizer = new HtmlSanitizer();
+            sliderDTO.ShortDesc = sanitizer.Sanitize(ShortDescText);
+            if (ChosenImg is null)
+            {
+                var Url = _httpContextAccessor.GetAuthorAvatarPath();
+                ChosenImg = $"{Url}No_Image.jpg";
+            }
+
+            sliderDTO.Image = ChosenImg;
+
+            var IsCreated = await _sliderRepository.UpdateSlider(_hashId.Decode(SliderId)[0], sliderDTO);
+            if (IsCreated)
+            {
+                await _jsRuntime.ToastrSuccess("Updated Successfuly");
+                _navigationManager.NavigateTo("/Sliders/Index/1");
+            }
+            else
+            {
+                await _jsRuntime.ToastrError("Coult Not Update The Record");
+
+            }
+        }
+    }
+
+
+    async Task<bool> InvalidForm()
+    {
+
+        if (sliderDTO.SliderTitle is null)
+        {
+            await _jsRuntime.ToastrError("Slider Title Cannot Be Null");
+            return true;
+        }
+
+        if (ChosenImg is null)
+        {
+            await _jsRuntime.ToastrError("Image Is null");
+            return true;
+        }
+        if (sliderDTO.StartDate <= DateTime.Now.AddDays(-1))
+        {
+            await _jsRuntime.ToastrError("Start Date Cant Be In The Past");
+            return true;
+        }
+        if (sliderDTO.EndDate <= DateTime.Now.AddDays(-1))
+        {
+            await _jsRuntime.ToastrError("End Date Cant Be In The Past");
+            return true;
+        }
+        if (sliderDTO.Url is null)
+        {
+            await _jsRuntime.ToastrError("Url Cant Be Null");
+            return true;
+        }
+
+        var text = await QuillHtml.GetText();
+        if (text.Length < 100)
+        {
+            await _jsRuntime.ToastrError("Slider Short Description  Must Be More Than 100 And Less Than 500 Characters");
+            QuillError = "Author Biography Must Be More Than 100 Characters";
+            return true;
+        }
+        QuillError = "";
+        return false;
+    }
+}

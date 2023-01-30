@@ -1,0 +1,60 @@
+﻿@inject IUserRepository _userRepository
+@inject IJSRuntime _jsRuntime
+@attribute [Authorize(Roles = SD.Role_Admin)]
+
+<div class="simple-form">
+
+    <div class="form-group">
+        <label for="first-name">User Full Name</label>
+        <input value="@User.FullName" type="text" disabled class="form-control" />
+    </div>
+    @if (IsProcess)
+    {
+        <button @onclick="SubmitForm" class="btn btn-outline-info btn-block"><i class="fade fa-spin fa-spinner"></i> Loading ...</button>
+        <button @onclick="Cancel" class="btn btn-outline-secondary  btn-block"><i class="fade fa-spin fa-spinner"></i> Loading ...</button>
+    }
+    else
+    {
+        <button @onclick="SubmitForm" class="btn btn-outline-info  btn-block">Change</button>
+        <button @onclick="Cancel" class="btn btn-outline-secondary  btn-block">Cancel</button>
+    }
+</div>
+
+@code {
+
+    [Parameter]
+    public string userId { get; set; }
+
+    public ApplicationUserDTO User { get; set; }
+
+    public bool IsProcess { get; set; } = false;
+
+    [CascadingParameter]
+    BlazoredModalInstance ModalInstance { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        User = await _userRepository.GetUserById(userId);
+    }
+
+    async Task SubmitForm()
+    {
+        var status = await _userRepository.ChangeUserActivationState(userId);
+        if (status)
+        {
+            await _jsRuntime.ToastrSuccess("Changed Successfuly");
+            await ModalInstance.CloseAsync(ModalResult.Ok($"Changed Successfuly"));
+
+        }
+        else
+        {
+            await _jsRuntime.ToastrError("Something Went Wrong");
+            await ModalInstance.CancelAsync();
+        }
+    }
+
+    async Task Cancel()
+    {
+        await ModalInstance.CancelAsync();
+    }
+}

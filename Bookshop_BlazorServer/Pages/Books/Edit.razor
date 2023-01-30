@@ -1,0 +1,571 @@
+﻿@page "/Books/Edit/{HashId}"
+@inject ICategoryRepository _categoryRepository
+@inject IAuthorRepository _authorRepository
+@inject ITranslatorRepository _translatorRepository
+@inject IPublisherRepository _publisherRepository
+@inject IBookRepository _bookRepository
+@inject IBookCoverFormatRepository _bookCoverFormatRepository
+@inject IBookCategoryRepository _bookCategoryRepository
+@inject IHttpContextAccessor _httpContextAccessor
+@inject IJSRuntime _jsRuntime
+@inject IFileUpload _fileUpload
+@inject IHashids _hashId
+@inject NavigationManager _navigationManager
+@attribute [Authorize(Roles = SD.Role_Admin)]
+<div class="container" style="margin-top:70px;">
+    @if (!IsLoading)
+    {
+        <EditForm Model="bookDTO" OnValidSubmit="EditBook" method="post">
+            <h2 class="text-center">News Info</h2>
+            <hr />
+            <div class="col-md-12">
+                <div class="form-row">
+                    <div class="form-group col-md-6">
+                        <label for="inputEmail4">Book Title</label>
+                        <InputText @bind-Value="@bookDTO.Title" class="form-control" placeholder="Title"></InputText>
+
+                    </div>
+                    <div class="form-group col-md-6">
+                        <label for="inputPassword4">ISBN</label>
+                        <InputText @bind-Value="bookDTO.ISBN" class="form-control" placeholder="ISBN"></InputText>
+
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group col-md-3">
+                        <label for="inputAddress">Price</label>
+                        <InputNumber @bind-Value="bookDTO.Price" class="form-control" placeholder="Price"></InputNumber>
+                    </div>
+                    <div class="form-group col-md-3">
+                        <label for="inputAddress">Quantity</label>
+                        <InputNumber @bind-Value="bookDTO.Quantity" class="form-control" placeholder="Price"></InputNumber>
+                    </div>
+
+                    <div class="form-group col-md-6">
+                        <label for="inputAddress2">Tags</label>
+                        <InputText @bind-Value="bookDTO.Tags" class="form-control" placeholder="Use , To Separate Words"></InputText>
+                    </div>
+
+                </div>
+
+                <div class="form-row">
+                    @if (CategoryDTOs.Count > 0)
+                    {
+                        <div class="form-group col-md-6">
+                            <label for="Author">Categories</label>
+
+                            <div class="container">
+                                @if (SelectedCategoryIds is not null)
+                                {
+                                    @foreach (var cat in CategoryDTOs)
+                                    {
+                                        <div class="form-check form-check-inline">
+
+                                            <input class="form-check-input" @onchange="(e)=>CategorySelect(e,cat.catId)" checked="@(SelectedCategoryIds.Contains(cat.catId) ? "checked":null)" type="checkbox">
+                                            <label class="form-check-label" for="inlineCheckbox1">@cat.CatTitle</label>
+                                        </div>
+                                    }
+                                }
+                                else
+                                {
+                                    @foreach (var cat in CategoryDTOs)
+                                    {
+                                        <div class="form-check form-check-inline">
+
+                                            <input class="form-check-input" @onchange="(e)=>CategorySelect(e,cat.catId)" type="checkbox">
+                                            <label class="form-check-label" for="inlineCheckbox1">@cat.CatTitle</label>
+                                        </div>
+                                    }
+                                }
+                            </div>
+
+
+                        </div>
+                    }
+                    <div class="form-group col-md-6">
+                        <label for="inputAddress2">Authors</label>
+                        <BlazoredTypeahead SearchMethod="GetAuthors"
+                                       @bind-Value="SelectedAuthor"
+                                       placeholder="Search by name..."
+                                       Context="authorContext"
+                                       ShowDropDownOnFocus=true>
+                            <SelectedTemplate>
+                                @authorContext.AuthorName
+                            </SelectedTemplate>
+                            <ResultTemplate Context="author">
+                                @author.AuthorName
+                            </ResultTemplate>
+                        </BlazoredTypeahead>
+
+
+                    </div>
+
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group col-md-6">
+                        <label for="inputCity">Published Date</label>
+                        <InputDate @bind-Value="bookDTO.PublishedYear" placeholder="example 02/02/1888" class="form-control"></InputDate>
+                    </div>
+                    <div class="form-group col-md-6">
+                        <label for="inputState">Translator</label>
+                        <BlazoredTypeahead SearchMethod="GetTranslators"
+                                       @bind-Value="SelectedTranslator"
+                                       placeholder="Search by title..."
+                                       Context="translatorContext"
+                                       ShowDropDownOnFocus=true>
+                            <SelectedTemplate>
+                                @translatorContext.TranslatorName
+                            </SelectedTemplate>
+                            <ResultTemplate Context="translator">
+                                @translator.TranslatorName
+                            </ResultTemplate>
+                        </BlazoredTypeahead>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group col-md-6">
+                        <label for="inputState">Publisher</label>
+                        <BlazoredTypeahead SearchMethod="GetPublishers"
+                                       @bind-Value="SelectedPublisher"
+                                       placeholder="Search by title..."
+                                       Context="publisherContext"
+                                       ShowDropDownOnFocus=true>
+                            <SelectedTemplate>
+                                @publisherContext.PublisherTitle
+                            </SelectedTemplate>
+                            <ResultTemplate Context="publisher">
+                                @publisher.PublisherTitle
+                            </ResultTemplate>
+                        </BlazoredTypeahead>
+
+                    </div>
+                    <div class="form-group col-md-6">
+                        <label for="inputState">Book Cover Format</label>
+                        <BlazoredTypeahead SearchMethod="GetBookCovers"
+                                       @bind-Value="SelectedBookCover"
+                                       placeholder="Search by title..."
+                                       Context="BookCoverContext"
+                                       ShowDropDownOnFocus=true>
+                            <SelectedTemplate>
+                                @BookCoverContext.CoverFormatTitle
+                            </SelectedTemplate>
+                            <ResultTemplate Context="coverFormat">
+                                @coverFormat.CoverFormatTitle
+                            </ResultTemplate>
+                        </BlazoredTypeahead>
+
+                    </div>
+
+                </div>
+
+
+
+                <div class="form-group">
+                    <label class="text-center">Description (Summary)</label>
+                    <BlazoredTextEditor @ref="@QuillHtml">
+                        <ToolbarContent>
+                            <select class="ql-header">
+                                <option selected=""></option>
+                                <option value="1"></option>
+                                <option value="2"></option>
+                                <option value="3"></option>
+                                <option value="4"></option>
+                                <option value="5"></option>
+                            </select>
+                            <span class="ql-formats">
+                                <button class="ql-bold"></button>
+                                <button class="ql-italic"></button>
+                                <button class="ql-underline"></button>
+                                <button class="ql-strike"></button>
+                            </span>
+                            <span class="ql-formats">
+                                <select class="ql-color"></select>
+                                <select class="ql-background"></select>
+                            </span>
+                            <span class="ql-formats">
+                                <button class="ql-list" value="ordered"></button>
+                                <button class="ql-list" value="bullet"></button>
+                            </span>
+                            <span class="ql-formats">
+                                <button class="ql-link"></button>
+                            </span>
+                        </ToolbarContent>
+                        <EditorContent>
+
+                        </EditorContent>
+                    </BlazoredTextEditor>
+
+                </div>
+
+
+
+                <center>
+                    <div>
+                            <div class="form-group">
+                                <img id="imgNews" class="thumbnail" src="@(ChosenImage is not null ? ChosenImage : NoImagePath)" width="500" height="300" />
+                                <label class="text-center">Book Image</label>
+                                <InputFile OnChange="UploadImg" name="imgUp" id="imgUp"></InputFile>
+                                @if (CurrentImage != ChosenImage && ChosenImage is not null)
+                                {
+                                    <a @onclick="DeleteImage" class="btn btn-outline-danger ">Delete Image</a>
+                                }
+                            </div>
+                    </div>
+                </center>
+
+
+                <input type="submit" value="Create" class="btn btn-outline-primary btn-block mb-5" />
+            </div>
+        </EditForm>
+    }
+    else
+    {
+        <div class="text-center">
+            <img src="/AdminLayout/images/loader.gif" height="200" width="200">
+        </div>
+    }
+</div>
+
+@code {
+    public BookDTO bookDTO { get; set; } = new();
+
+    public List<AuthorDTO> AuthorDTOs { get; set; } = new();
+
+    public List<CategoryDTO> CategoryDTOs { get; set; } = new();
+
+    public List<TranslatorDTO> TranslatorDTOs { get; set; } = new();
+
+    public List<PublisherDTO> PublisherDTOs { get; set; } = new();
+
+    public List<BookCoverFormatDTO> coverFormatsDTO { get; set; } = new();
+
+    public AuthorDTO SelectedAuthor { get; set; }
+
+    public List<int> SelectedCategoryIds { get; set; } = new();
+
+    public TranslatorDTO SelectedTranslator { get; set; }
+
+    public PublisherDTO SelectedPublisher { get; set; }
+
+    public BookCoverFormatDTO SelectedBookCover { get; set; }
+
+    public BlazoredTextEditor QuillHtml { get; set; } = new();
+
+    public string CurrentImage { get; set; }
+
+    public string ChosenImage { get; set; }
+
+    public string NoImagePath { get; set; }
+
+    public bool IsLoading { get; set; }
+
+    [Parameter]
+    public string HashId { get; set; }
+
+    public int BookRawId { get; set; }
+
+
+
+    private async Task LoadData()
+    {
+        IsLoading = true;
+        StateHasChanged();
+        NoImagePath = $"{_httpContextAccessor.GetBookImagePath()}No_Image.jpg";
+        CategoryDTOs = await _categoryRepository.GetAllCategoriesForCreateOrEdit();
+        BookRawId = _hashId.Decode(HashId)[0];
+        bookDTO = await _bookRepository.GetBookById(BookRawId);
+        CurrentImage = bookDTO.Image;
+        SelectedCategoryIds = await _bookCategoryRepository.GetCategoryIdsByBookId(BookRawId);
+        SelectedAuthor = await _authorRepository.GetAuthorById(bookDTO.AuthorId);
+        SelectedPublisher = _publisherRepository.GetPublisherById(bookDTO.PublisherId);
+        SelectedBookCover = await _bookCoverFormatRepository.GetBookCoverFormatById(bookDTO.CoverFormatId);
+        if (bookDTO.TranslatorId is not null)
+        {
+            SelectedTranslator = await _translatorRepository.GetTranslatorById(bookDTO.TranslatorId.Value);
+        }
+        if (CurrentImage is null)
+        {
+            CurrentImage = NoImagePath;
+        }
+        ChosenImage = CurrentImage;
+        IsLoading = false;
+        StateHasChanged();
+    }
+
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+
+            await LoadData();
+            bool loading = true;
+            while (loading)
+            {
+                try
+                {
+                    if (!string.IsNullOrEmpty(bookDTO.Description))
+                    {
+                        await QuillHtml.LoadHTMLContent(bookDTO.Description);
+                    }
+                    loading = false;
+                }
+                catch
+                {
+                    await Task.Delay(10);
+                    loading = true;
+                }
+            }
+            StateHasChanged();
+        }
+    }
+
+    private async Task<IEnumerable<AuthorDTO>> GetAuthors(string searchText)
+    {
+        (AuthorDTOs, _) = await _authorRepository.GetAllAuthors(1, searchText);
+        return AuthorDTOs;
+    }
+
+    private async Task<IEnumerable<TranslatorDTO>> GetTranslators(string searchText)
+    {
+        (TranslatorDTOs, _) = await _translatorRepository.GetAllTranslators(1, searchText);
+        return TranslatorDTOs;
+    }
+
+    private async Task<IEnumerable<PublisherDTO>> GetPublishers(string searchText)
+    {
+        (PublisherDTOs, _) = await _publisherRepository.GetAllPublishers(1, searchText);
+        return PublisherDTOs;
+    }
+
+    private async Task<IEnumerable<BookCoverFormatDTO>> GetBookCovers(string searchText)
+    {
+        coverFormatsDTO = await _bookCoverFormatRepository.GetAllBookCoverFormats(searchText);
+        return coverFormatsDTO;
+    }
+
+
+
+
+    private async Task UploadImg(InputFileChangeEventArgs e)
+    {
+        var Url = _httpContextAccessor.GetBookImagePath();
+        var fileName = CurrentImage.Replace(Url, null);
+        if (fileName == "No_Image.jpg")
+        {
+            var fileInfo = new FileInfo(e.File.Name);
+            if (fileInfo.Extension == ".png" || fileInfo.Extension == ".jpg" || fileInfo.Extension == ".jpeg")
+            {
+                ChosenImage = await _fileUpload.UploadFile(e.File, SD.BookAvatar);
+            }
+            else
+            {
+                await _jsRuntime.ToastrError("Only .png , .jpeg Or .jpg Files Are Accepted");
+            }
+        }
+        else
+        {
+            var IsDeleted = await _fileUpload.DeleteFile(fileName, SD.BookAvatar);
+            if (IsDeleted)
+            {
+                var fileInfo = new FileInfo(e.File.Name);
+                if (fileInfo.Extension == ".png" || fileInfo.Extension == ".jpg" || fileInfo.Extension == ".jpeg")
+                {
+                    ChosenImage = await _fileUpload.UploadFile(e.File, SD.BookAvatar);
+                }
+                else
+                {
+                    await _jsRuntime.ToastrError("Only .png , .jpg And .jpeg Files Are Accepted");
+                }
+            }
+            else
+            {
+                await _jsRuntime.ToastrError("Could Not Delete The Current File");
+            }
+        }
+    }
+
+    async Task DeleteImage()
+    {
+        var Url = _httpContextAccessor.GetBookImagePath();
+        string filename = ChosenImage.Replace(Url, null);
+
+        if (filename != "No_Image.jpg")
+        {
+            var IsDeleted = await _fileUpload.DeleteFile(filename, SD.BookAvatar);
+            if (IsDeleted)
+            {
+                await _jsRuntime.ToastrSuccess("Deleted Successfuly");
+                var url = _httpContextAccessor.GetBookImagePath();
+                CurrentImage = $"{url}No_Image.jpg";
+                ChosenImage = null;
+            }
+            else
+            {
+                await _jsRuntime.ToastrSuccess("Something Went Wrong");
+            }
+        }
+        else
+        {
+            await _jsRuntime.ToastrWarning("No Image");
+        }
+
+    }
+
+    private async Task CategorySelect(ChangeEventArgs args, int catId)
+    {
+
+        if ((bool)args.Value)
+        {
+            if (SelectedCategoryIds is not null)
+            {
+                SelectedCategoryIds.Add(catId);
+
+            }
+            else
+            {
+                SelectedCategoryIds = new List<int>();
+                SelectedCategoryIds.Add(catId);
+            }
+        }
+        else
+        {
+            SelectedCategoryIds.Remove(catId);
+        }
+    }
+
+    private async Task EditBook()
+    {
+        var IsThereError = await InvalidSubmit();
+        if (IsThereError)
+        {
+            return;
+        }
+        var sanitizer = new HtmlSanitizer();
+        var desc = await QuillHtml.GetHTML();
+        var sanitizedDesc = sanitizer.Sanitize(desc);
+
+        bookDTO.AuthorId = SelectedAuthor.AuthorID;
+        bookDTO.Description = sanitizedDesc;
+        bookDTO.Image = ChosenImage;
+        bookDTO.PublisherId = SelectedPublisher.PublisherId;
+        bookDTO.CoverFormatId = SelectedBookCover.CoverFormatId;
+        if (SelectedTranslator is not null)
+        {
+            bookDTO.TranslatorId = SelectedTranslator.TranslatorId;
+        }
+
+
+
+        var result = await _bookRepository.UpdateBook(BookRawId, bookDTO);
+
+        if (result is null)
+        {
+            await _jsRuntime.ToastrError("Could Not Add Book");
+            return;
+        }
+
+        if (SelectedCategoryIds.Count > 0)
+        {
+            var IsDeleted = await _bookCategoryRepository.DeleteBookCategoryByBookId(bookDTO.BookId);
+            if (IsDeleted)
+            {
+
+                foreach (var categoryId in SelectedCategoryIds)
+                {
+                    BookCategoriesDTO bookCategory = new()
+                        {
+                            BookId = result.BookId,
+                            CatId = categoryId
+                        };
+                    var IsAdded = await _bookCategoryRepository.AddBookCategory(bookCategory);
+                    if (!IsAdded)
+                    {
+                        await _jsRuntime.ToastrError("Could Not Add Categories");
+                        return;
+                    }
+                }
+            }
+            else
+            {
+                await _jsRuntime.ToastrError("Something Went Wrong");
+            }
+        }
+        await _jsRuntime.ToastrSuccess("Book Edited Successfuly");
+        _navigationManager.NavigateTo("/Books/Index/1");
+    }
+
+
+
+
+    private async Task<bool> InvalidSubmit()
+    {
+        if (bookDTO.Title is null)
+        {
+            await _jsRuntime.ToastrError("Title Is Required");
+            return true;
+        }
+        if (bookDTO.ISBN is null)
+        {
+            await _jsRuntime.ToastrError("ISBN Is Required");
+            return true;
+        }
+        if (bookDTO.Price <= 0)
+        {
+            await _jsRuntime.ToastrError("Price Is Required");
+            return true;
+        }
+        if (bookDTO.Quantity <= 0)
+        {
+            await _jsRuntime.ToastrError("Quantity Is Required");
+            return true;
+        }
+        if (bookDTO.Tags is null)
+        {
+            await _jsRuntime.ToastrError("Tags Is Required");
+            return true;
+        }
+        if (SelectedCategoryIds.Count == 0)
+        {
+            await _jsRuntime.ToastrError("Category Is Required");
+            return true;
+        }
+        if (SelectedAuthor is null)
+        {
+            await _jsRuntime.ToastrError("Author Is Required");
+            return true;
+        }
+
+        if (bookDTO.PublishedYear >= DateTime.Now)
+        {
+            await _jsRuntime.ToastrError("Published Year Is Wrong");
+            return true;
+        }
+        //if (SelectedTranslator is null)
+        //{
+        //    await _jsRuntime.ToastrError("Translator Is Required");
+        //    return true;
+        //}
+        if (SelectedPublisher is null)
+        {
+            await _jsRuntime.ToastrError("Publisher Is Required");
+            return true;
+        }
+        if (SelectedBookCover is null)
+        {
+            await _jsRuntime.ToastrError("Cover Format Is Required");
+            return true;
+        }
+
+        var text = await QuillHtml.GetText();
+        if (text.Length < 50)
+        {
+            await _jsRuntime.ToastrError("Book Description (Summary) Must Be More Than 50 Characters");
+            return true;
+        }
+        return false;
+
+    }
+
+}

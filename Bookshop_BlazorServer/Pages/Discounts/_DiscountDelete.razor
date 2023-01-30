@@ -1,0 +1,73 @@
+﻿@inject IJSRuntime _jsRuntime
+@inject IDiscountRepository _discountRepository
+@inject IBookRepository _bookRepository
+@attribute [Authorize(Roles = SD.Role_Admin)]
+
+
+
+<div class="container">
+    <div class="form-group col-md-6">
+        <label for="Name">Book Name</label>
+        <input disabled value="@Book" class="form-control" style="width:300px;" id="AuthorName" placeholder="Book Name">
+
+    </div>
+
+    <div class="form-group col-md-6">
+        <label for="AuthorImage">Percentage</label>
+        <input disabled value="@discount.DiscountPercent" style="width:300px;" class="form-control" >
+    </div>
+
+     <div class="form-group col-md-6">
+        <label for="AuthorImage">Start Date</label>
+        <input disabled value="@discount.StartDate.Date" style="width:300px;" class="form-control" id="AuthorChosenImage" width="100" height="100">
+    </div>
+
+    <div class="form-group col-md-6">
+        <label for="AuthorImage">End Date</label>
+        <input disabled value="@discount.endDate.Date" style="width:300px;" class="form-control" >
+    </div>
+
+    <button @onclick="DeleteAuthor" class="btn btn-outline-danger btn-block mb-5">Delete Discount</button>
+</div>
+
+
+
+@code {
+    public DiscountDTO discount { get; set; } = new();
+
+    public string Book{ get; set; }
+
+    [Parameter]
+    public int discountId { get; set; }
+
+    [CascadingParameter]
+    BlazoredModalInstance ModalInstance { get; set; }
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        discount = await _discountRepository.GetDiscountById(discountId);
+        Book = _bookRepository.GetBookTitle(discount.BookId);
+    }
+
+
+    async Task DeleteAuthor()
+    {
+        var discount = await _discountRepository.GetDiscountById(discountId);
+
+        var state = await _discountRepository.DeleteDiscountById(discountId);
+        if (state)
+        {
+            await _jsRuntime.ToastrSuccess("Deleted Successfuly");
+            await ModalInstance.CloseAsync(ModalResult.Ok($"Deleted Successfuly"));
+
+        }
+        else
+        {
+            await _jsRuntime.ToastrError("Could Not Delete The Author");
+            await ModalInstance.CancelAsync();
+
+        }
+
+    }
+}

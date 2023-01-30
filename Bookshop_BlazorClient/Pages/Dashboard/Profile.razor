@@ -1,0 +1,94 @@
+﻿@page "/Dashboard/Profile"
+@inject IAccountRepository _accountRepository
+@inject NavigationManager _navigationManager
+@inject ILocalStorageService _localStorage
+@inject IHashids _hashId
+@inject IJSRuntime _jsRuntime
+@attribute [Authorize(Roles = SD.Role_Customer)]
+
+<HeadContent>
+    <link rel="stylesheet" href="css/Dashboard.css" type="text/css">
+</HeadContent>
+
+
+<div class="container">
+    <div class="main-body">
+
+        <!-- Breadcrumb -->
+        <nav aria-label="breadcrumb" class="main-breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/">Home</a></li>
+                <li class="breadcrumb-item active" aria-current="page">User Profile</li>
+            </ol>
+        </nav>
+        <!-- /Breadcrumb -->
+
+        <div class="row gutters-sm">
+            <div class="col-md-4 mb-3">
+                <DashboardSideNav UserName="@User.FullName"></DashboardSideNav>
+                <DashboardInfoNav></DashboardInfoNav>
+            </div>
+            <div class="col-md-8">
+                <h2>Account Info</h2>
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-lg-4 u-s-m-b-30">
+                                <h2 class="dash__h2 u-s-m-b-8">Full Name</h2>
+
+                                <span class="dash__text">@User?.FullName</span>
+                            </div>
+                            <div class="col-lg-4 u-s-m-b-30">
+                                <h2 class="dash__h2 u-s-m-b-8">E-mail</h2>
+
+                                <span class="dash__text">@User?.Email</span>
+
+                            </div>
+                            <div class="col-lg-4 u-s-m-b-30">
+                                <h2 class="dash__h2 u-s-m-b-8">Phone</h2>
+
+                                <span class="dash__text">@User?.PhoneNo</span>
+
+                            </div>
+
+                        </div>
+                        <div class="row">
+                            <div class="col-lg-12">
+                                <div>
+
+                                    <a class="dash__custom-link btn--e-brand-b-2" href="/Account/ChangePassword">Change Password</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+
+            </div>
+        </div>
+
+    </div>
+</div>
+
+
+
+@code {
+    public UserDTO User { get; set; } = new();
+
+    public string Token { get; set; }
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        //var authenticationState = await AuthenticationState;
+        User = await _localStorage.GetItemAsync<UserDTO>(SD.Local_UserDetails);
+        Token = await _localStorage.GetItemAsync<string>(SD.Local_Token);
+        if (User is null || Token is null)
+        {
+            _navigationManager.NavigateTo("/Account/Login");
+            return;
+        }
+
+    }
+}

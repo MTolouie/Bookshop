@@ -1,0 +1,41 @@
+﻿@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Profile";
+    ViewData["ActivePage"] = ManageNavPages.Index;
+}
+
+<partial name="_StatusMessage" for="StatusMessage" />
+<div class="row">
+    <div class="col-md-8  text-center">
+        <div asp-validation-summary="All" class="text-danger"></div>
+        <div class="card">
+            <div class="card-body card-block">
+                <div class="form-group">
+                    <div class="input-group">
+                        <div class="input-group-addon">Email</div>
+                        <input asp-for="Username" disabled class="form-control">
+                        <div class="input-group-addon"><i class="fa fa-envelope"></i></div>
+                        <span asp-validation-for="Username" class="text-danger"></span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="input-group">
+                        <div class="input-group-addon">Phone Number</div>
+                        <input asp-for="Input.PhoneNumber" class="form-control">
+                        <div class="input-group-addon"><i class="fa fa-phone"></i></div>
+                        <span asp-validation-for="Input.PhoneNumber" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <div class="form-actions form-group">
+                    <button type="submit" class="btn btn-outline-primary ">Save</button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    }

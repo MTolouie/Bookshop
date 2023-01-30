@@ -1,0 +1,119 @@
+﻿@inject IJSRuntime _jsRuntime
+@inject IBookRepository _bookRepository
+@inject IFileUpload _fileUpload
+@inject IHttpContextAccessor _httpContextAccessor
+@inject NavigationManager _navigationManager
+@attribute [Authorize(Roles = SD.Role_Admin)]
+
+
+<div class="container">
+    <div class="form-group col-md-6">
+        <label for="Name">Book Name</label>
+        <input disabled value="@book.Title" class="form-control" style="width:300px;" placeholder="Book Name">
+
+    </div>
+
+    <div class="form-group col-md-6">
+        <label for="AuthorImage">Image</label>
+        <img src="@book.Image" class="rounded-circle ml-3" width="100" height="100">
+    </div>
+
+    <div class="container">
+        <label for="inputAddress">Description</label>
+        @((MarkupString)book.Description)
+    </div>
+    <div class="container">
+
+        <button @onclick="DeleteBook" class="btn btn-outline-danger btn-block mb-5">Delete Book</button>
+
+    </div>
+</div>
+
+
+
+@code {
+    public BookDTO book { get; set; } = new();
+
+    [Parameter]
+    public int bookId { get; set; }
+
+
+    [CascadingParameter]
+    BlazoredModalInstance ModalInstance { get; set; }
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        book = await _bookRepository.GetBookById(bookId);
+    }
+
+
+    async Task DeleteBook()
+    {
+        var book = await _bookRepository.GetBookById(bookId);
+
+        if (book is not null)
+        {
+            var Url = _httpContextAccessor.GetBookImagePath();
+            string filename = book.Image.Replace(Url, null);
+
+            if (filename != "No_Image.jpg")
+            {
+                try
+                {
+                    var IsDeleted = await _fileUpload.DeleteFile(filename, SD.BookAvatar);
+                    if (IsDeleted)
+                    {
+
+                        var state = await _bookRepository.DeleteBookById(book.BookId);
+                        if (state)
+                        {
+                            await _jsRuntime.ToastrSuccess("Deleted Successfuly");  
+                            await ModalInstance.CloseAsync(ModalResult.Ok("DeletedSuccessfuly"));        
+                        }
+                        else
+                        {
+                            await _jsRuntime.ToastrError("Could Not Delete The Book");
+                            await ModalInstance.CancelAsync();
+                        }
+
+                    }
+                    else
+                    {
+                        await _jsRuntime.ToastrError("Could Not Delete The Image");
+                        await ModalInstance.CancelAsync();
+
+                    }
+                }
+                catch (Exception ex)
+                {
+
+                    await _jsRuntime.ToastrError(ex.Message);
+                }
+            }
+            else
+            {
+
+                var state = await _bookRepository.DeleteBookById(bookId);
+                if (state)
+                {
+                    await _jsRuntime.ToastrSuccess("Deleted Successfuly");
+                    await ModalInstance.CloseAsync(ModalResult.Ok($"Deleted Successfuly"));
+
+                }
+                else
+                {
+                    await _jsRuntime.ToastrError("Could Not Delete The Book");
+                    await ModalInstance.CancelAsync();
+
+                }
+
+                await _jsRuntime.ToastrSuccess("Had No Image To Delete But Deleted Successfuly");
+                await ModalInstance.CloseAsync(ModalResult.Ok($"Deleted Successfuly"));
+            }
+
+        }
+
+
+    }
+    }
