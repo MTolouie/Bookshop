@@ -1,6 +1,6 @@
 *.cs linguist-detectable=true
 *.cshtml linguist-detectable=true
-
+*.html linguist-detectable=false
 
 
 
