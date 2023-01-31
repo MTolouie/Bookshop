@@ -171,7 +171,7 @@ public class BookRepository : IBookRepository
             var books = await _db.Books
                 .Where(b => b.AuthorId == AuthorId)
                 .Take(8)
-                .OrderByDescending(b=>b.CreatedDate)
+                .OrderByDescending(b => b.CreatedDate)
                 .ToListAsync();
 
             if (books is null)
@@ -320,7 +320,7 @@ public class BookRepository : IBookRepository
             if (book is null)
                 return false;
 
-            book.Quantity  -= 1;
+            book.Quantity -= 1;
 
             _db.Books.Update(book);
             await _db.SaveChangesAsync();
@@ -346,7 +346,7 @@ public class BookRepository : IBookRepository
                 return null;
 
 
-            var booksDTO = _mapper.Map<List<Book>,List<BookDTO>>(books);
+            var booksDTO = _mapper.Map<List<Book>, List<BookDTO>>(books);
 
             return booksDTO;
         }
@@ -375,6 +375,32 @@ public class BookRepository : IBookRepository
         catch (Exception ex)
         {
             return null;
+        }
+    }
+
+    public async Task<List<BookDTO>> GetZeroQuantityBooks()
+    {
+        var books = await _db.Books.Where(b => b.Quantity == 0).ToListAsync();
+
+        if (books is null)
+            return null;
+
+        var booksDTO = _mapper.Map<List<Book>, List<BookDTO>>(books);
+
+        return booksDTO;
+    }
+
+    public async Task<int> GetAllBookCount()
+    {
+        try
+        {
+            var bookCount = await _db.Books.Where(b=>b.Quantity > 0).CountAsync();
+
+            return bookCount;
+        }
+        catch (Exception ex)
+        {
+            return 0;
         }
     }
 }

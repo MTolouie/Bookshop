@@ -73,7 +73,6 @@ public class BooksController : ControllerBase
         return Ok(books);
     }
 
-
     [HttpGet("[action]/{bookId:int}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(List<string>))]

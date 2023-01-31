@@ -40,6 +40,23 @@ public class UserRepository : IUserRepository
         }
     }
 
+    public async Task<int> GetActiveUserCount()
+    {
+        try
+        {
+            var ActiveUser = await _db.ApplicationUser.Where(u => u.IsActive).ToListAsync();
+
+            if (ActiveUser is null)
+                return 0;
+
+            return ActiveUser.Count;
+        }
+        catch (Exception e)
+        {
+            return 0;
+        }
+    }
+
     public async Task<Tuple<List<ApplicationUserDTO>, int>> GetAllUsers(int pageId, string Name)
     {
         try

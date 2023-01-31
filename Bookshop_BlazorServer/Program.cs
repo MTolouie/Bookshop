@@ -42,6 +42,7 @@ builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IEmailSender, EmailSender>();
 builder.Services.AddScoped<ISliderRepository, SliderRepository>();
 builder.Services.AddScoped<IDiscountRepository, DiscountRepository>();
+builder.Services.AddScoped<ICartRepository, CartRepository>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddBlazoredModal();
 builder.Services.AddSingleton<IHashids>(_=>new Hashids("Bookshop",11));

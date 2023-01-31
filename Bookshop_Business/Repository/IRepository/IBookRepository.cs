@@ -6,6 +6,8 @@ public interface IBookRepository
 {
     public Tuple<List<BookDTO>, int> GetAllBooks(DateTime fromdate, DateTime toDate,int pageId = 1, string bookTitle = "", string authorName = "", int categoryId = 0, double startPrice = 0, double endPrice = 0,int publisherId = 0);
     public Task<List<BookDTO>> GetLatestBooks();
+    public Task<int> GetAllBookCount();
+    public Task<List<BookDTO>> GetZeroQuantityBooks();
     public Task<List<BookDTO>> GetAllBooksWithoutPagination();
     public Task<BookDTO> GetBookById(int BookId);
     //public Task<WishlistBookViewModel> GetBooksForWishlist(string userId);

@@ -107,7 +107,7 @@ public class CartRepository : ICartRepository
         await _db.SaveChangesAsync();
     }
 
-    public async Task<bool> DeleteFromCart(int cartId,int CartDetailId)
+    public async Task<bool> DeleteFromCart(int cartId, int CartDetailId)
     {
         try
         {
@@ -121,15 +121,15 @@ public class CartRepository : ICartRepository
 
             var cartDetails = await _db.CartDetail.Where(d => d.CartId == cartId).ToListAsync();
 
-            if(cartDetails.Count == 0)
+            if (cartDetails.Count == 0)
             {
                 var cart = await _db.Cart.FindAsync(cartId);
-                if(cart is not null)
+                if (cart is not null)
                 {
                     _db.Cart.Remove(cart);
                     await _db.SaveChangesAsync();
                 }
-                
+
             }
             else
             {
@@ -149,15 +149,15 @@ public class CartRepository : ICartRepository
         try
         {
             var cart = await _db.Cart
-                .Include(c=>c.CartDetails)
-                .ThenInclude(d=>d.Book)
-                .Where(c=>c.IsFinally == false && c.UserId == userId)
+                .Include(c => c.CartDetails)
+                .ThenInclude(d => d.Book)
+                .Where(c => c.IsFinally == false && c.UserId == userId)
                 .SingleOrDefaultAsync();
 
-            if(cart is null)
+            if (cart is null)
                 return null;
 
-            var cartDTO = _mapper.Map<Cart,CartDTO>(cart);
+            var cartDTO = _mapper.Map<Cart, CartDTO>(cart);
 
             return cartDTO;
 
@@ -216,11 +216,31 @@ public class CartRepository : ICartRepository
             if (carts is null)
                 return null;
 
-            var cartsDTO = _mapper.Map<List<Cart>,List<CartDTO>>(carts);
+            var cartsDTO = _mapper.Map<List<Cart>, List<CartDTO>>(carts);
 
             return cartsDTO;
         }
         catch (Exception ex)
+        {
+            return null;
+        }
+    }
+
+    public async Task<List<CartDTO>> GetLast24HrCarts()
+    {
+        try
+        {
+            DateTime now = DateTime.Now;
+            var carts = await _db.Cart.Where(c => c.CreateDate > now.AddHours(-24) && c.CreateDate <= now).ToListAsync();
+
+            if (carts == null)
+                return null;
+
+            var cartsDTO = _mapper.Map<List<Cart>,List<CartDTO>>(carts);
+
+            return cartsDTO;
+        }
+        catch (Exception e)
         {
             return null;
         }

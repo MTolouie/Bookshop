@@ -70,13 +70,13 @@
                             <div class="alert alert-info col-md-3">
                                 <p>Books Left : @BookDTO.Quantity</p>
                             </div>
-                        @if (BookDTO.Quantity >= 1 || UserDTO is not null)
+                        @if (BookDTO.Quantity >= 1 && UserDTO is not null)
                         {
                             <button @onclick="()=>AddToCart(BookDTO.BookId,UserDTO.Id)" class="primary-btn">Add to Cart</button>
                         }
                         else
                         {
-                            <button class="primary-btn" type="submit" disabled>Add to Cart</button>
+                            <button class="btn btn-secondary" type="submit" disabled>Sold Out</button>
                         }
                     </div>
                 </div>
@@ -367,7 +367,7 @@ else
     {
         (Token, UserDTO) = await GetDataFromLocalStorage();
 
-        if (UserDTO.Id != userId && bookId != BookDTO.BookId)
+        if (UserDTO.Id != userId && bookId != BookDTO.BookId && BookDTO.Quantity > 0)
         {
             await _jsRuntime.ToastrError("Something Went Wrong");
             return;
