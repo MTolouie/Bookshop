@@ -4,6 +4,7 @@
 @inject ICartRepository _cartRepository
 @inject IBookRepository _bookRepository
 @inject IUserRepository _userRepository
+@inject IJSRuntime _jsRuntime
 <PageTitle>Dashboard</PageTitle>
 
 <div class="content">
@@ -229,6 +230,11 @@
         Carts = await _cartRepository.GetLast24HrCarts();
         ActiveUserCount = await _userRepository.GetActiveUserCount();
         BookCount = await _bookRepository.GetAllBookCount();
+
+        if(RanOutBooks.Count > 0)
+        {
+            await _jsRuntime.ToastrWarning($"{RanOutBooks.Count} Books Have Ran Out");
+        }
 
         foreach (var cart in Carts)
         {
