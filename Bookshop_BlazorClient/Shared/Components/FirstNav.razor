@@ -13,40 +13,18 @@
             <li>
                 <a href="/Wishlist/Index/1">
                     <i class="fa fa-heart"></i>
-                    @if (wishlistsDTO is not null && wishlistsDTO.Any())
-                    {
-                        <span>@wishlistsDTO.Count()</span>
-                    }
-                    else
-                    {
-                        <span>0</span>
-                    }
+                    
                 </a>
             </li>
             <li>
                 <a href="#">
                     <i class="fa fa-shopping-bag"></i>
-                    @if (CartDTO.CartDetails is not null && CartDTO.CartDetails.Any())
-                    {
-                        <span>@CartDTO.CartDetails.Count</span>
-                    }
-                    else
-                    {
-                        <span>0</span>
-                    }
+                    
                 </a>
             </li>
         </ul>
         <div class="header__cart__price">
-            item:
-            @if (CartDTO.CartDetails is not null && CartDTO.CartDetails.Any())
-            {
-                <span>@CartDTO.CartSum.ToString("C")</span>
-            }
-            else
-            {
-                <span>$0</span>
-            }
+           
         </div>
     </div>
     <div class="humberger__menu__widget">

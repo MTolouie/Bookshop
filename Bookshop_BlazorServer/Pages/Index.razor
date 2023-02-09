@@ -5,6 +5,7 @@
 @inject IBookRepository _bookRepository
 @inject IUserRepository _userRepository
 @inject IJSRuntime _jsRuntime
+@inject IHashids _hashId
 <PageTitle>Dashboard</PageTitle>
 
 <div class="content">
@@ -94,100 +95,117 @@
                 <div class="col-xl-12">
                     <div class="card">
                         <div class="card-body">
-                            <h4 class="box-title">Orders </h4>
+                            <h4 class="box-title">Ran Out Books </h4>
                         </div>
                         <div class="card-body--">
                             <div class="table-stats order-table ov-h">
-                                <table class="table ">
-                                    <thead>
-                                        <tr>
-                                            <th class="serial">#</th>
-                                            <th class="avatar">Avatar</th>
-                                            <th>ID</th>
-                                            <th>Name</th>
-                                            <th>Product</th>
-                                            <th>Quantity</th>
-                                            <th>Status</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr>
-                                            <td class="serial">1.</td>
-                                            <td class="avatar">
-                                                <div class="round-img">
-                                                    <a href="#"><img class="rounded-circle" src="/AdminLayout/images/avatar/1.jpg" alt=""></a>
-                                                </div>
-                                            </td>
-                                            <td> #5469 </td>
-                                            <td>  <span class="name">Louis Stanley</span> </td>
-                                            <td> <span class="product">iMax</span> </td>
-                                            <td><span class="count">231</span></td>
-                                            <td>
-                                                <span class="badge badge-complete">Complete</span>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td class="serial">2.</td>
-                                            <td class="avatar">
-                                                <div class="round-img">
-                                                    <a href="#"><img class="rounded-circle" src="/AdminLayout/images/avatar/2.jpg" alt=""></a>
-                                                </div>
-                                            </td>
-                                            <td> #5468 </td>
-                                            <td>  <span class="name">Gregory Dixon</span> </td>
-                                            <td> <span class="product">iPad</span> </td>
-                                            <td><span class="count">250</span></td>
-                                            <td>
-                                                <span class="badge badge-complete">Complete</span>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td class="serial">3.</td>
-                                            <td class="avatar">
-                                                <div class="round-img">
-                                                    <a href="#"><img class="rounded-circle" src="/AdminLayout/images/avatar/3.jpg" alt=""></a>
-                                                </div>
-                                            </td>
-                                            <td> #5467 </td>
-                                            <td>  <span class="name">Catherine Dixon</span> </td>
-                                            <td> <span class="product">SSD</span> </td>
-                                            <td><span class="count">250</span></td>
-                                            <td>
-                                                <span class="badge badge-complete">Complete</span>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td class="serial">4.</td>
-                                            <td class="avatar">
-                                                <div class="round-img">
-                                                    <a href="#"><img class="rounded-circle" src="/AdminLayout/images/avatar/4.jpg" alt=""></a>
-                                                </div>
-                                            </td>
-                                            <td> #5466 </td>
-                                            <td>  <span class="name">Mary Silva</span> </td>
-                                            <td> <span class="product">Magic Mouse</span> </td>
-                                            <td><span class="count">250</span></td>
-                                            <td>
-                                                <span class="badge badge-pending">Pending</span>
-                                            </td>
-                                        </tr>
-                                        <tr class=" pb-0">
-                                            <td class="serial">5.</td>
-                                            <td class="avatar pb-0">
-                                                <div class="round-img">
-                                                    <a href="#"><img class="rounded-circle" src="/AdminLayout/images/avatar/6.jpg" alt=""></a>
-                                                </div>
-                                            </td>
-                                            <td> #5465 </td>
-                                            <td>  <span class="name">Johnny Stephens</span> </td>
-                                            <td> <span class="product">Monitor</span> </td>
-                                            <td><span class="count">250</span></td>
-                                            <td>
-                                                <span class="badge badge-complete">Complete</span>
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
+                                @if (RanOutBooks is not null && RanOutBooks.Any())
+                                {
+                                    <table class="table ">
+                                        <thead>
+                                            <tr>
+                                                <th class="avatar">Image</th>
+                                                <th>Name</th>
+                                                <th>Added Date</th>
+                                                <th>ISBN</th>
+                                                <th>Activity</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var book in RanOutBooks)
+                                            {
+
+                                                <tr>
+                                                    <td class="avatar">
+                                                        <div class="round-img">
+                                                            <a href="/Books/Edit/@_hashId.Encode(book.BookId)">
+                                                                <img class="rounded-circle" src="@book.Image" alt="">
+                                                            </a>
+                                                        </div>
+                                                    </td>
+                                                    <td> <a href="/Books/Edit/@_hashId.Encode(book.BookId)">@book.Title</a></td>
+                                                    <td>  <span class="name">@book.CreatedDate </span> </td>
+                                                    <td>  <span class="name">@book.ISBN</span> </td>
+                                                    <td>
+                                                        <a class="btn btn-outline-warning" href="/Books/edit/@_hashId.Encode(book.BookId)">Edit</a>
+                                                    </td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                }
+                                else
+                                {
+                                    <div class="container">
+                                        <div class="alert alert-danger text-center">
+                                            <h2>No Data</h2>
+                                        </div>
+                                    </div>
+                                }
+                            </div> <!-- /.table-stats -->
+                        </div>
+                    </div> <!-- /.card -->
+                </div>  <!-- /.col-lg-8 -->
+
+            </div>
+        </div>
+        <!-- /.orders -->
+        <!-- Orders -->
+        <div class="orders">
+            <div class="row">
+                <div class="col-xl-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <h4 class="box-title">Todays Orders </h4>
+                        </div>
+                        <div class="card-body--">
+                            <div class="table-stats order-table ov-h">
+                                @if (Carts is not null && Carts.Any())
+                                {
+                                    <table class="table ">
+                                        <thead>
+                                            <tr>
+                                                <th class="avatar">Date</th>
+                                                <th>Cost</th>
+                                                <th>Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var cart in Carts)
+                                            {
+
+                                                <tr>
+                                                    <td class="avatar">
+                                                        <div class="round-img">
+                                                            @cart.CreateDate.ToGregorian()
+                                                        </div>
+                                                    </td>
+                                                    <td>@cart.CartSum.ToString("C")</td>
+                                                    <td>
+                                                        <span class="name">
+                                                            @if (cart.IsFinally)
+                                                            {
+                                                                <span class="badge badge-success">Paid</span>
+                                                            }
+                                                            else
+                                                            {
+                                                                <span class="badge badge-danger">Open</span>
+                                                            }
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                }
+                                else
+                                {
+                                    <div class="container">
+                                        <div class="alert alert-danger text-center">
+                                            <h2>No Data</h2>
+                                        </div>
+                                    </div>
+                                }
                             </div> <!-- /.table-stats -->
                         </div>
                     </div> <!-- /.card -->

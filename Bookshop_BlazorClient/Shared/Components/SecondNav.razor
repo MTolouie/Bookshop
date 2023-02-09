@@ -90,34 +90,16 @@
                         <li>
                             <a href="/Wishlist/Index/1">
                                 <i class="fa fa-heart"></i>
-                                    <span>@NumberOfWishlists</span>
                             </a>
                         </li>
                         <li>
                             <a href="/Cart/Index">
                                 <i class="fa fa-shopping-bag"></i>
-                                @if (CartDTO.CartDetails is not null && CartDTO.CartDetails.Any())
-                                {
-                                    <span>@CartDTO.CartDetails.Count</span>
-                                }
-                                else
-                                {
-                                    <span>0</span>
-                                }
+                                
                             </a>
                         </li>
                     </ul>
-                    <div class="header__cart__price">
-                        item:
-                        @if (CartDTO.CartDetails is not null && CartDTO.CartDetails.Any())
-                        {
-                            <span>@CartDTO.CartSum.ToString("C")</span>
-                        }
-                        else
-                        {
-                            <span>$0</span>
-                        }
-                    </div>
+                    
                 </div>
             </div>
         </div>
