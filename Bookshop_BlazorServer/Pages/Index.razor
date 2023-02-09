@@ -208,7 +208,7 @@
 
     public List<CartDTO> Carts { get; set; } = new();
 
-    public double TodaysRevenue{ get; set; }
+    public double TodaysRevenue { get; set; }
 
     public int TodaysSoldBooks = 0;
 
@@ -231,10 +231,7 @@
         ActiveUserCount = await _userRepository.GetActiveUserCount();
         BookCount = await _bookRepository.GetAllBookCount();
 
-        if(RanOutBooks.Count > 0)
-        {
-            await _jsRuntime.ToastrWarning($"{RanOutBooks.Count} Books Have Ran Out");
-        }
+
 
         foreach (var cart in Carts)
         {
@@ -242,5 +239,16 @@
         }
 
 
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            if (RanOutBooks.Count > 0)
+            {
+                await _jsRuntime.ToastrWarning($"{RanOutBooks.Count} Book / Books Has / Have Ran Out");
+            }
+        }
     }
 }
