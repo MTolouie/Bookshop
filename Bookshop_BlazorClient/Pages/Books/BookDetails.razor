@@ -67,9 +67,9 @@
                             @((MarkupString)BookDTO.Description)
                         </p>
 
-                            <div class="alert alert-info col-md-3">
-                                <p>Books Left : @BookDTO.Quantity</p>
-                            </div>
+                        <div class="alert alert-info col-md-3">
+                            <p>Books Left : @BookDTO.Quantity</p>
+                        </div>
                         @if (BookDTO.Quantity >= 1 && UserDTO is not null)
                         {
                             <button @onclick="()=>AddToCart(BookDTO.BookId,UserDTO.Id)" class="primary-btn">Add to Cart</button>
@@ -320,17 +320,17 @@ else
             user = await _localStorage.GetItemAsync<UserDTO>(SD.Local_UserDetails);
             Token = await _localStorage.GetItemAsync<string>(SD.Local_Token);
         }
-        else
-        {
-            var authenticationState = await AuthenticationState;
-            if (!authenticationState.User.Identity.IsAuthenticated)
-            {
-                await _jsRuntime.ToastrError("You Need To Login");
-                _navigationManager.NavigateTo("/Account/Login");
-                return null;
+        //else
+        //{
+        //    var authenticationState = await AuthenticationState;
+        //    if (!authenticationState.User.Identity.IsAuthenticated)
+        //    {
+        //        await _jsRuntime.ToastrError("You Need To Login");
+        //        _navigationManager.NavigateTo("/Account/Login");
+        //        return null;
 
-            }
-        }
+        //    }
+        //}
         var tuple = Tuple.Create(Token, user);
         return tuple;
     }
@@ -339,6 +339,14 @@ else
     {
 
         (Token, UserDTO) = await GetDataFromLocalStorage();
+
+        var authenticationState = await AuthenticationState;
+        if (!authenticationState.User.Identity.IsAuthenticated)
+        {
+            await _jsRuntime.ToastrError("You Need To Login");
+            _navigationManager.NavigateTo("/Account/Login");
+
+        }
 
         var wishlist = new WishlistDTO()
             {
@@ -366,6 +374,15 @@ else
     private async Task AddToCart(int bookId, string userId)
     {
         (Token, UserDTO) = await GetDataFromLocalStorage();
+
+        var authenticationState = await AuthenticationState;
+        if (!authenticationState.User.Identity.IsAuthenticated)
+        {
+            await _jsRuntime.ToastrError("You Need To Login");
+            _navigationManager.NavigateTo("/Account/Login");
+            _navigationManager.NavigateTo("/Account/Login");
+
+        }
 
         if (UserDTO.Id != userId && bookId != BookDTO.BookId && BookDTO.Quantity > 0)
         {
